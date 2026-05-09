@@ -1,8 +1,33 @@
 export default {
   // Navigation
+  'nav.articles': 'Articles',
+  'nav.categories': 'Categories',
+  'nav.about': 'About',
+  // Legacy keys kept for compatibility
   'nav.features': 'Features',
   'nav.stack': 'Stack',
   'nav.pricing': 'Pricing',
+
+  // Blog
+  'blog.hero.badge': 'Dev Blog',
+  'blog.hero.title': 'Code, articles & dev culture',
+  'blog.hero.description': 'Hands-on guides, deep dives and developer notes. Built by devs, for devs.',
+  'blog.hero.ctaArticles': 'Read articles',
+  'blog.hero.ctaCategories': 'Browse categories',
+  'blog.latest.title': 'Latest articles',
+  'blog.latest.subtitle': 'Fresh from the keyboard',
+  'blog.latest.viewAll': 'View all articles',
+  'blog.categories.title': 'Categories',
+  'blog.categories.subtitle': 'Find what interests you',
+  'blog.empty.title': 'No articles yet',
+  'blog.empty.description': 'Check back soon — articles are on the way.',
+  'blog.article.readMore': 'Read more',
+  'blog.article.minRead': '{minutes} min read',
+  'blog.article.publishedOn': 'Published on {date}',
+  'blog.article.by': 'by',
+  'blog.article.notFound.title': 'Article not found',
+  'blog.article.notFound.description': 'The article you are looking for does not exist or has been removed.',
+  'blog.article.backToList': 'Back to all articles',
 
   // Auth buttons
   'auth.signIn': 'Sign in',
@@ -53,7 +78,7 @@ export default {
   'home.pricing.description': 'One-time purchase. Lifetime access. No subscriptions.',
   'home.pricing.plan': 'Lifetime Access',
   'home.pricing.oneTime': 'One-time payment',
-  'home.pricing.cta': 'Get ShipStack Now',
+  'home.pricing.cta': 'Get BlogTonioCode Now',
   'home.pricing.guarantee': '30-day money-back guarantee',
   'home.pricing.feature1': 'Full source code access',
   'home.pricing.feature2': 'All current features',
@@ -65,13 +90,13 @@ export default {
   // Home - CTA
   'home.cta.title': 'Ready to ship your SaaS?',
   'home.cta.description':
-    'Join hundreds of developers who are already building with ShipStack. Start your project today and launch faster.',
+    'Join hundreds of developers who are already building with BlogTonioCode. Start your project today and launch faster.',
   'home.cta.button': 'Get Started Now',
 
   // Footer
   'footer.privacy': 'Privacy',
   'footer.terms': 'Terms',
-  'footer.copyright': '© {year} ShipStack. All rights reserved.',
+  'footer.copyright': '© {year} BlogTonioCode. All rights reserved.',
 
   // Sign in
   'signIn.title': 'Sign in',
@@ -142,7 +167,7 @@ export default {
   'theme.system': 'System',
 
   // Metadata
-  'meta.title': 'ShipStack - Ship your SaaS faster',
+  'meta.title': 'BlogTonioCode - Ship your SaaS faster',
   'meta.description':
     'The ultimate Next.js boilerplate for building production-ready SaaS applications in days, not months.',
 
