@@ -94,7 +94,15 @@ export const auth = betterAuth({
   socialProviders: buildSocialProviders(),
 
   plugins: [
-    admin(),
+    // Align with Prisma `Role` enum (uppercase). Without this, admin()
+    // defaults to lowercase "user" and Postgres rejects the INSERT during
+    // signup with `unable_to_create_user`. Our own requireAdmin /
+    // requireSuperAdmin helpers in lib/actions/admin.ts handle role gating,
+    // so we don't configure adminRoles here (the plugin's built-in admin
+    // helpers are unused).
+    admin({
+      defaultRole: "USER",
+    }),
   ],
 
   // Better Auth fires this after a user row is written (email/password signup
