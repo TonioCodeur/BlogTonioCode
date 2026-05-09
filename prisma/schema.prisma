@@ -1,0 +1,247 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// Better Auth Models
+// ============================================
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  role          Role      @default(USER)
+  banned        Boolean   @default(false)
+  banReason     String?
+  banExpires    DateTime?
+  sessions      Session[]
+  accounts      Account[]
+
+  // LemonSqueezy
+  lemonSqueezyCustomerId String?
+
+  // Sanctions
+  sanctions         Sanction[]  @relation("UserSanctions")
+  sanctionsIssued   Sanction[]  @relation("SanctionIssuedBy")
+
+  // Messaging
+  conversationParticipants ConversationParticipant[]
+  messagesAuthored         Message[] @relation("MessageAuthor")
+  messagesDeletedByAdmin   Message[] @relation("MessageDeletedByAdmin")
+
+  // Bots
+  isBot            Boolean           @default(false)
+  isBotActive      Boolean           @default(true)
+  botDescription   String?
+  botAutoMessages  BotAutoMessage[]  @relation("BotAutoMessagesByBot")
+
+  @@unique([email])
+  @@map("user")
+}
+
+// ============================================
+// Administration & Sanctions
+// ============================================
+
+enum Role {
+  USER
+  CUSTOMER
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum SanctionType {
+  WARNING
+  MUTE
+  TEMPORARY_BAN
+  PERMANENT_BAN
+}
+
+enum SanctionStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+model Sanction {
+  id          String         @id @default(cuid())
+  type        SanctionType
+  status      SanctionStatus @default(ACTIVE)
+  reason      String
+  notes       String?        // Internal notes for admins
+
+  // Duration (null = permanent for bans)
+  expiresAt   DateTime?
+
+  // Timestamps
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  revokedAt   DateTime?
+
+  // Relations
+  userId      String
+  user        User           @relation("UserSanctions", fields: [userId], references: [id], onDelete: Cascade)
+
+  issuedById  String?
+  issuedBy    User?          @relation("SanctionIssuedBy", fields: [issuedById], references: [id], onDelete: SetNull)
+
+  // Revocation info
+  revokedById String?
+  revokeReason String?
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@index([expiresAt])
+  @@map("sanction")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+// ============================================
+// Messaging (1-to-1 DMs, MVP)
+// ============================================
+
+model Conversation {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  // Set on the latest message; used to sort the inbox efficiently.
+  // Null when a conversation has just been created and no message has been sent yet.
+  lastMessageAt  DateTime?
+
+  participants   ConversationParticipant[]
+  messages       Message[]
+
+  @@index([lastMessageAt])
+  @@map("conversation")
+}
+
+model ConversationParticipant {
+  id             String   @id @default(cuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime @default(now())
+  // Set the first time the user opens the conversation. Null = never viewed
+  // (used to render a "new conversation" indicator).
+  firstViewedAt  DateTime?
+  // Used to compute unread count: messages with createdAt > lastReadAt (and authorId != userId).
+  lastReadAt     DateTime?
+  // Reserved for a post-MVP "silence this thread" feature.
+  mutedByUser    Boolean  @default(false)
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId, lastReadAt])
+  @@index([userId, firstViewedAt])
+  @@index([conversationId])
+  @@map("conversation_participant")
+}
+
+model Message {
+  id               String   @id @default(cuid())
+  conversationId   String
+  // authorId null => account of the original author was deleted; rendered as "deleted user".
+  authorId         String?
+  content          String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Soft-delete by the message author.
+  deletedAt        DateTime?
+  // Soft-delete by an admin (moderation trace).
+  deletedByAdminId String?
+  deletionReason   String?
+
+  conversation     Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author           User?        @relation("MessageAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  deletedByAdmin   User?        @relation("MessageDeletedByAdmin", fields: [deletedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, createdAt])
+  @@index([authorId])
+  @@map("message")
+}
+
+// ============================================
+// Bots (fake users with automatic messages)
+// ============================================
+
+enum BotTrigger {
+  USER_SIGNUP
+  ROLE_CHANGED
+  SANCTION_APPLIED
+}
+
+model BotAutoMessage {
+  id         String     @id @default(cuid())
+  botUserId  String
+  trigger    BotTrigger
+  content    String
+  isActive   Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  botUser    User       @relation("BotAutoMessagesByBot", fields: [botUserId], references: [id], onDelete: Cascade)
+
+  @@index([botUserId, trigger])
+  @@index([trigger, isActive])
+  @@map("bot_auto_message")
+}
