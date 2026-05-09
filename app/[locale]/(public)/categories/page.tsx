@@ -1,9 +1,19 @@
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { getI18n } from "@/locales/server";
 import { CategoryCard } from "@/components/blog/category-card";
 
+type Role = "USER" | "CUSTOMER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
+
 export default async function CategoriesIndexPage() {
   const t = await getI18n();
+  const session = await auth.api
+    .getSession({ headers: await headers() })
+    .catch(() => null);
+  const currentUserRole = (session?.user
+    ? ((session.user as { role?: string }).role as Role | undefined) ?? null
+    : null) as Role | null;
 
   const categories = await prisma.category
     .findMany({
@@ -28,7 +38,11 @@ export default async function CategoriesIndexPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((category) => (
-            <CategoryCard key={category.id} category={category} />
+            <CategoryCard
+              key={category.id}
+              category={category}
+              currentUserRole={currentUserRole}
+            />
           ))}
         </div>
       )}

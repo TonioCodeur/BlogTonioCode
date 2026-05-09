@@ -11,7 +11,7 @@ const I18nMiddleware = createI18nMiddleware({
   urlMappingStrategy: "rewrite",
 });
 
-const protectedRoutes = ["/dashboard", "/settings", "/profile", "/admin", "/pricing", "/order-success", "/order-successfull", "/messages"];
+const protectedRoutes = ["/dashboard", "/settings", "/profile", "/admin", "/pricing", "/order-success", "/order-successfull", "/messages", "/blog/new", "/categories/new"];
 const authRoutes = ["/signin", "/signup"];
 
 function stripLocale(pathname: string): string {

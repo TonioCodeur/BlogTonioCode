@@ -6,6 +6,7 @@ import { getI18n } from "@/locales/server";
 import { ModeToggle } from "./mode-toggle";
 import { LanguageSwitcher } from "./language-switcher";
 import { AuthButtons } from "./auth/auth-buttons";
+import { NewContentMenu } from "./blog/new-content-menu";
 
 export async function Header() {
   const session = await auth.api.getSession({
@@ -47,6 +48,7 @@ export async function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {session ? <NewContentMenu /> : null}
           <LanguageSwitcher />
           <ModeToggle />
           <AuthButtons isAuthenticated={!!session} />

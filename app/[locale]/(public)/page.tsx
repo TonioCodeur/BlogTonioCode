@@ -1,15 +1,25 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { ArrowRight, Calendar, FolderOpen, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getI18n, getCurrentLocale } from "@/locales/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { ArticleCard } from "@/components/blog/article-card";
 import { CategoryCard } from "@/components/blog/category-card";
+
+type Role = "USER" | "CUSTOMER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
 
 export default async function HomePage() {
   const t = await getI18n();
   const locale = await getCurrentLocale();
+  const session = await auth.api
+    .getSession({ headers: await headers() })
+    .catch(() => null);
+  const currentUserRole = (session?.user
+    ? ((session.user as { role?: string }).role as Role | undefined) ?? null
+    : null) as Role | null;
 
   // Fetch the 6 most recent published articles + all categories.
   // The DB may be empty during dev — both queries fall back to empty arrays.
@@ -116,7 +126,11 @@ export default async function HomePage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {categories.map((category) => (
-                <CategoryCard key={category.id} category={category} />
+                <CategoryCard
+                  key={category.id}
+                  category={category}
+                  currentUserRole={currentUserRole}
+                />
               ))}
             </div>
           </div>
