@@ -3,6 +3,7 @@ export default {
   'nav.articles': 'Articles',
   'nav.categories': 'Categories',
   'nav.about': 'About',
+  'nav.searchPlaceholder': 'Search the dev journal…',
   // Legacy keys kept for compatibility
   'nav.features': 'Features',
   'nav.stack': 'Stack',
@@ -28,6 +29,14 @@ export default {
   'blog.article.notFound.title': 'Article not found',
   'blog.article.notFound.description': 'The article you are looking for does not exist or has been removed.',
   'blog.article.backToList': 'Back to all articles',
+  'blog.stats.live': 'Live stats',
+  'blog.stats.thisMonth': 'this month',
+  'blog.stats.publishedArticles': 'published articles',
+  'blog.stats.authors': 'authors',
+  'blog.stats.categories': 'categories',
+  'blog.stats.comments': 'comments',
+  'blog.stats.members': 'members',
+  'blog.browse': 'Browse',
 
   // Auth buttons
   'auth.signIn': 'Sign in',

@@ -31,7 +31,7 @@ export default async function LocaleLayout({
 
   return (
     <I18nProviderClient locale={locale}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
         <TooltipProvider>
           {children}
           <Toaster position="bottom-right" />

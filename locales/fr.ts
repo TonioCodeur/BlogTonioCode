@@ -3,6 +3,7 @@ export default {
   'nav.articles': 'Articles',
   'nav.categories': 'Catégories',
   'nav.about': 'À propos',
+  'nav.searchPlaceholder': 'Chercher dans le journal…',
   // Legacy keys kept for compatibility
   'nav.features': 'Fonctionnalités',
   'nav.stack': 'Stack',
@@ -28,6 +29,14 @@ export default {
   'blog.article.notFound.title': 'Article introuvable',
   'blog.article.notFound.description': "L'article que vous cherchez n'existe pas ou a été supprimé.",
   'blog.article.backToList': 'Retour à tous les articles',
+  'blog.stats.live': 'Stats en direct',
+  'blog.stats.thisMonth': 'ce mois-ci',
+  'blog.stats.publishedArticles': 'articles publiés',
+  'blog.stats.authors': 'auteurs',
+  'blog.stats.categories': 'catégories',
+  'blog.stats.comments': 'commentaires',
+  'blog.stats.members': 'membres',
+  'blog.browse': 'Parcourir',
 
   // Auth buttons
   'auth.signIn': 'Connexion',
