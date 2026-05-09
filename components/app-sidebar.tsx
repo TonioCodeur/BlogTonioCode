@@ -8,6 +8,7 @@ import {
 import { SidebarNav } from "@/components/sidebar-nav";
 import { SidebarUserMenu } from "@/components/sidebar-user-menu";
 import Link from "next/link";
+import { Code2 } from "lucide-react";
 
 interface AppSidebarProps {
   user: {
@@ -25,34 +26,12 @@ export function AppSidebar({ user }: AppSidebarProps) {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-1">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 38 38"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="shrink-0"
-            >
-              <circle
-                cx="19"
-                cy="19"
-                r="18"
-                className="fill-primary"
-                stroke="currentColor"
-                strokeWidth="2"
-              />
-              <path
-                d="M13 25L25 13M15 13H25V23"
-                stroke="white"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="dark:stroke-background"
-              />
-            </svg>
-            <span className="font-bold text-lg tracking-tight truncate group-data-[collapsible=icon]:hidden">
-              Ship<span className="text-muted-foreground">Stack</span>
+          <Link href="/" className="flex items-center gap-2">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <Code2 className="h-5 w-5" />
+            </span>
+            <span className="font-mono font-bold text-lg tracking-tight truncate group-data-[collapsible=icon]:hidden">
+              Blog<span className="text-primary">Tonio</span>Code
             </span>
           </Link>
         </div>

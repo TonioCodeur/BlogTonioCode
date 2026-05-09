@@ -159,6 +159,12 @@ export default {
   'dashboard.sessionStarted': 'Session démarrée',
   'dashboard.ipAddress': 'Adresse IP',
   'dashboard.unknown': 'Inconnu',
+  'dashboard.myArticles.title': 'Mes articles',
+  'dashboard.myArticles.subtitle': '{count} article(s) écrit(s)',
+  'dashboard.myArticles.writeCta': 'Écrire un article',
+  'dashboard.myArticles.empty.title': 'Aucun article pour le moment',
+  'dashboard.myArticles.empty.description': 'Partagez votre premier article avec la communauté.',
+  'dashboard.myArticles.empty.cta': 'Écrire mon premier article',
 
   // Theme toggle
   'theme.toggle': 'Changer le thème',

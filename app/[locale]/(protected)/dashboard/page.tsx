@@ -1,184 +1,75 @@
-"use client";
-
-import { useSession, signOut } from "@/lib/auth-client";
+import { headers } from "next/headers";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { FileText, Plus } from "lucide-react";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { getI18n, getCurrentLocale } from "@/locales/server";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useI18n } from "@/locales/client";
-import { useRouter } from "next/navigation";
-import { CalendarDays, Mail, Shield, CheckCircle, XCircle } from "lucide-react";
+import { ArticleCard } from "@/components/blog/article-card";
 
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
+export default async function DashboardPage() {
+  const t = await getI18n();
+  const locale = await getCurrentLocale();
+  const session = await auth.api.getSession({ headers: await headers() });
 
-function formatDate(date: string | Date, locale: string): string {
-  return new Date(date).toLocaleDateString(locale, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-type DashboardUser = {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
-  email: string;
-  emailVerified: boolean;
-  name: string;
-  image?: string | null;
-  role?: string; // Add role property, optional for safety
-};
-
-type DashboardSession = {
-  user?: DashboardUser;
-  session?: {
-    createdAt?: string | Date;
-  };
-};
-
-export default function DashboardPage() {
-  const t = useI18n();
-  const { data: session, isPending } = useSession() as { data: DashboardSession; isPending: boolean };
-  const router = useRouter();
-
-  const handleSignOut = async () => {
-    await signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push("/signin");
-        },
-      },
-    });
-  };
-
-  if (isPending) {
-    return (
-      <div className="p-8">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <Skeleton className="h-9 w-48" />
-          <div className="grid gap-6 md:grid-cols-2">
-            <Skeleton className="h-64" />
-            <Skeleton className="h-64" />
-          </div>
-        </div>
-      </div>
-    );
+  if (!session?.user) {
+    redirect("/signin");
   }
 
-  const user = session?.user;
-  const currentSession = session?.session;
-  const locale = typeof document !== "undefined" ? document.documentElement.lang || "en" : "en";
+  const articles = await prisma.article
+    .findMany({
+      where: { authorId: session.user.id },
+      orderBy: [{ updatedAt: "desc" }],
+      include: {
+        author: { select: { name: true, image: true } },
+        category: { select: { name: true, slug: true, color: true } },
+      },
+    })
+    .catch(() => []);
 
   return (
-    <div className="p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">{t("dashboard.title")}</h1>
-          <Button variant="outline" onClick={handleSignOut}>
-            {t("dashboard.signOut")}
+    <div className="container mx-auto px-4 py-12 sm:py-16">
+      <header className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-mono text-4xl font-bold tracking-tight sm:text-5xl">
+            {t("dashboard.myArticles.title")}
+          </h1>
+          <p className="mt-3 text-lg text-muted-foreground">
+            {t("dashboard.myArticles.subtitle", { count: articles.length })}
+          </p>
+        </div>
+        <Button asChild size="lg">
+          <Link href="/blog/new">
+            <Plus className="mr-2 h-4 w-4" />
+            {t("dashboard.myArticles.writeCta")}
+          </Link>
+        </Button>
+      </header>
+
+      {articles.length === 0 ? (
+        <div className="rounded-xl border border-dashed p-12 text-center">
+          <FileText className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+          <h2 className="text-lg font-semibold">
+            {t("dashboard.myArticles.empty.title")}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t("dashboard.myArticles.empty.description")}
+          </p>
+          <Button asChild className="mt-6">
+            <Link href="/blog/new">
+              <Plus className="mr-2 h-4 w-4" />
+              {t("dashboard.myArticles.empty.cta")}
+            </Link>
           </Button>
         </div>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? ""} />
-                <AvatarFallback className="text-lg">
-                  {getInitials(user?.name || t("dashboard.guest"))}
-                </AvatarFallback>
-              </Avatar>
-              <div className="space-y-1">
-                <CardTitle className="text-2xl">
-                  {t("dashboard.welcome", { name: user?.name || t("dashboard.guest") })}
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">{user?.email}</p>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">{t("dashboard.account")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-sm truncate">{user?.email}</span>
-                  {user?.emailVerified ? (
-                    <Badge variant="secondary" className="shrink-0 gap-1">
-                      <CheckCircle className="h-3 w-3" />
-                      {t("dashboard.emailVerified")}
-                    </Badge>
-                  ) : (
-                    <Badge variant="destructive" className="shrink-0 gap-1">
-                      <XCircle className="h-3 w-3" />
-                      {t("dashboard.emailNotVerified")}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center gap-3">
-                <Shield className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm text-muted-foreground">{t("dashboard.role")}</span>
-                <Badge variant="outline" className="ml-auto">
-                  {user?.role ?? "USER"}
-                </Badge>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center gap-3">
-                <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm text-muted-foreground">{t("dashboard.memberSince")}</span>
-                <span className="ml-auto text-sm">
-                  {user?.createdAt ? formatDate(user.createdAt, locale) : t("dashboard.unknown")}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">{t("dashboard.session")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm text-muted-foreground">
-                  {t("dashboard.sessionStarted")}
-                </span>
-                <span className="ml-auto text-sm">
-                  {currentSession?.createdAt
-                    ? formatDate(currentSession.createdAt, locale)
-                    : t("dashboard.unknown")}
-                </span>
-              </div>
-
-
-
-            </CardContent>
-          </Card>
+      ) : (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {articles.map((article) => (
+            <ArticleCard key={article.id} article={article} locale={locale} />
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }

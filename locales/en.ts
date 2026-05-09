@@ -159,6 +159,12 @@ export default {
   'dashboard.sessionStarted': 'Session started',
   'dashboard.ipAddress': 'IP address',
   'dashboard.unknown': 'Unknown',
+  'dashboard.myArticles.title': 'My articles',
+  'dashboard.myArticles.subtitle': '{count} article(s) written',
+  'dashboard.myArticles.writeCta': 'Write an article',
+  'dashboard.myArticles.empty.title': 'No articles yet',
+  'dashboard.myArticles.empty.description': 'Share your first article with the community.',
+  'dashboard.myArticles.empty.cta': 'Write your first article',
 
   // Theme toggle
   'theme.toggle': 'Toggle theme',
