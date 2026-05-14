@@ -8,7 +8,7 @@ import {
 import { SidebarNav } from "@/components/sidebar-nav";
 import { SidebarUserMenu } from "@/components/sidebar-user-menu";
 import Link from "next/link";
-import { Code2 } from "lucide-react";
+import { Zap } from "lucide-react";
 
 interface AppSidebarProps {
   user: {
@@ -26,12 +26,20 @@ export function AppSidebar({ user }: AppSidebarProps) {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-1">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Code2 className="h-5 w-5" />
+          <Link href="/" className="group flex items-center gap-3">
+            <span
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-white"
+              style={{
+                background:
+                  "linear-gradient(135deg, rgb(var(--accent-rgb)), rgb(var(--accent-rgb-2)))",
+                boxShadow:
+                  "0 0 calc(28px * var(--glow)) rgba(var(--accent-rgb) / calc(0.7 * var(--glow))), inset 0 1px 0 rgba(255,255,255,0.3)",
+              }}
+            >
+              <Zap className="h-[17px] w-[17px]" fill="currentColor" />
             </span>
-            <span className="font-mono font-bold text-lg tracking-tight truncate group-data-[collapsible=icon]:hidden">
-              Blog<span className="text-primary">Tonio</span>Code
+            <span className="font-display text-lg font-bold tracking-[-0.02em] truncate group-data-[collapsible=icon]:hidden">
+              BlogTonio<span className="grad-text">.code</span>
             </span>
           </Link>
         </div>
