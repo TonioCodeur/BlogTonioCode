@@ -2,6 +2,7 @@ import { getI18n } from "@/locales/server";
 import { I18nProviderClient } from "@/locales/client";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryProvider } from "@/components/providers/query-provider";
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
 
@@ -31,12 +32,14 @@ export default async function LocaleLayout({
 
   return (
     <I18nProviderClient locale={locale}>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-        <TooltipProvider>
-          {children}
-          <Toaster position="bottom-right" />
-        </TooltipProvider>
-      </ThemeProvider>
+      <QueryProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          <TooltipProvider>
+            {children}
+            <Toaster position="bottom-right" />
+          </TooltipProvider>
+        </ThemeProvider>
+      </QueryProvider>
     </I18nProviderClient>
   );
 }

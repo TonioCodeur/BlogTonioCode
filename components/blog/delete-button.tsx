@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -56,11 +57,10 @@ export function DeleteButton({
 }: DeleteButtonProps) {
   const t = useI18n();
   const [open, setOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
 
-  const handleConfirm = () => {
-    startTransition(async () => {
-      const result = await onDelete();
+  const mutation = useMutation({
+    mutationFn: onDelete,
+    onSuccess: (result) => {
       if (result.success) {
         toast.success(successMessage ?? t("blog.actions.delete.success"));
         setOpen(false);
@@ -68,8 +68,9 @@ export function DeleteButton({
       } else {
         toast.error(result.error ?? errorMessage ?? t("blog.actions.delete.error"));
       }
-    });
-  };
+    },
+    onError: () => toast.error(errorMessage ?? t("blog.actions.delete.error")),
+  });
 
   const buttonLabel = label ?? t("blog.actions.delete");
 
@@ -96,18 +97,18 @@ export function DeleteButton({
           <AlertDialogDescription>{confirmDescription}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>
+          <AlertDialogCancel disabled={mutation.isPending}>
             {t("blog.actions.delete.cancel")}
           </AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
             onClick={(e) => {
               e.preventDefault();
-              handleConfirm();
+              mutation.mutate();
             }}
-            disabled={isPending}
+            disabled={mutation.isPending}
           >
-            {isPending
+            {mutation.isPending
               ? t("blog.actions.delete.deleting")
               : t("blog.actions.delete.confirm")}
           </AlertDialogAction>

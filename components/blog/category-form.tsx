@@ -1,11 +1,11 @@
 "use client";
 
-import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,11 +19,29 @@ import {
 } from "@/components/ui/form";
 import { createCategory } from "@/lib/actions/blog";
 import { useI18n } from "@/locales/client";
+import { queryKeys } from "@/lib/queries";
 
 export function CategoryForm() {
   const t = useI18n();
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: createCategory,
+    onSuccess: (result) => {
+      if (result.success && result.data) {
+        toast.success(t("category.new.success"));
+        queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+        router.push(`/categories/${result.data.slug}`);
+        router.refresh();
+      } else {
+        toast.error(
+          (!result.success && result.error) || t("category.new.error"),
+        );
+      }
+    },
+    onError: () => toast.error(t("category.new.error")),
+  });
 
   const schema = z.object({
     name: z
@@ -46,22 +64,10 @@ export function CategoryForm() {
   });
 
   const onSubmit = (values: FormValues) => {
-    startTransition(async () => {
-      const result = await createCategory({
-        name: values.name,
-        description: values.description || undefined,
-        color: values.color || undefined,
-      });
-
-      if (result.success && result.data) {
-        toast.success(t("category.new.success"));
-        router.push(`/categories/${result.data.slug}`);
-        router.refresh();
-      } else {
-        toast.error(
-          (!result.success && result.error) || t("category.new.error"),
-        );
-      }
+    mutation.mutate({
+      name: values.name,
+      description: values.description || undefined,
+      color: values.color || undefined,
     });
   };
 
@@ -131,8 +137,8 @@ export function CategoryForm() {
         />
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={isPending}>
-            {isPending
+          <Button type="submit" disabled={mutation.isPending}>
+            {mutation.isPending
               ? t("category.new.submitting")
               : t("category.new.submit")}
           </Button>

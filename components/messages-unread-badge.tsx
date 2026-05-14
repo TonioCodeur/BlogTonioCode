@@ -1,11 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/locales/client";
 import { getUnreadCount } from "@/lib/actions/messaging";
+import { queryKeys } from "@/lib/queries";
 
 const POLL_INTERVAL_MS = 15_000;
+
+function useUnreadCount() {
+  return useQuery({
+    queryKey: queryKeys.messages.unreadCount(),
+    queryFn: async () => {
+      const result = await getUnreadCount();
+      return result.ok ? result.count : 0;
+    },
+    refetchInterval: POLL_INTERVAL_MS,
+    refetchIntervalInBackground: false,
+    staleTime: 5_000,
+  });
+}
 
 /**
  * Polls the server for the current unread message count and
@@ -13,29 +27,7 @@ const POLL_INTERVAL_MS = 15_000;
  */
 export function MessagesUnreadBadge() {
   const t = useI18n();
-  const [count, setCount] = useState<number>(0);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchCount() {
-      try {
-        const result = await getUnreadCount();
-        if (!cancelled && result.ok) {
-          setCount(result.count);
-        }
-      } catch {
-        // Silent fail — next poll will retry
-      }
-    }
-
-    void fetchCount();
-    const id = setInterval(fetchCount, POLL_INTERVAL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, []);
+  const { data: count = 0 } = useUnreadCount();
 
   if (count <= 0) return null;
 
@@ -53,35 +45,12 @@ export function MessagesUnreadBadge() {
 
 /**
  * Standalone notification dot polled on the same cadence as the badge.
- * Rendered overlaid on the sidebar's MessageSquare icon to make unread
- * messages obvious even when the menu is collapsed and the count badge
- * is hidden.
+ * Both consumers share the same query cache entry — only one request goes
+ * out per poll interval.
  */
 export function MessagesUnreadDot() {
   const t = useI18n();
-  const [count, setCount] = useState<number>(0);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchCount() {
-      try {
-        const result = await getUnreadCount();
-        if (!cancelled && result.ok) {
-          setCount(result.count);
-        }
-      } catch {
-        // Silent fail — next poll will retry
-      }
-    }
-
-    void fetchCount();
-    const id = setInterval(fetchCount, POLL_INTERVAL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, []);
+  const { data: count = 0 } = useUnreadCount();
 
   if (count <= 0) return null;
 

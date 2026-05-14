@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { createComment } from "@/lib/actions/blog";
 import { useI18n } from "@/locales/client";
+import { queryKeys } from "@/lib/queries";
 
 type CommentFormProps = {
   postId: string;
@@ -25,30 +27,30 @@ export function CommentForm({
 }: CommentFormProps) {
   const t = useI18n();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [content, setContent] = useState("");
-  const [isPending, startTransition] = useTransition();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = content.trim();
-    if (!trimmed) return;
-
-    startTransition(async () => {
-      const result = await createComment({
-        postId,
-        content: trimmed,
-        parentId,
-      });
-
+  const mutation = useMutation({
+    mutationFn: createComment,
+    onSuccess: (result) => {
       if (result.success) {
         toast.success(t("blog.comments.success"));
         setContent("");
+        queryClient.invalidateQueries({ queryKey: queryKeys.comments.forPost(postId) });
         onSuccess?.();
         router.refresh();
       } else {
         toast.error(result.error || t("blog.comments.error"));
       }
-    });
+    },
+    onError: () => toast.error(t("blog.comments.error")),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = content.trim();
+    if (!trimmed) return;
+    mutation.mutate({ postId, content: trimmed, parentId });
   };
 
   return (
@@ -62,7 +64,7 @@ export function CommentForm({
             : t("blog.comments.placeholder")
         }
         rows={isReply ? 3 : 4}
-        disabled={isPending}
+        disabled={mutation.isPending}
         required
       />
       <div className="flex items-center justify-end gap-2">
@@ -72,13 +74,17 @@ export function CommentForm({
             variant="ghost"
             size="sm"
             onClick={onCancel}
-            disabled={isPending}
+            disabled={mutation.isPending}
           >
             {t("blog.comments.cancel")}
           </Button>
         ) : null}
-        <Button type="submit" size="sm" disabled={isPending || !content.trim()}>
-          {isPending
+        <Button
+          type="submit"
+          size="sm"
+          disabled={mutation.isPending || !content.trim()}
+        >
+          {mutation.isPending
             ? t("blog.comments.submitting")
             : isReply
               ? t("blog.comments.submitReply")

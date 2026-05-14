@@ -1,12 +1,12 @@
 "use client";
 
-import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,6 +30,7 @@ import {
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { createPost } from "@/lib/actions/blog";
 import { useI18n } from "@/locales/client";
+import { queryKeys } from "@/lib/queries";
 
 type CategoryOption = {
   slug: string;
@@ -43,7 +44,25 @@ type PostFormProps = {
 export function PostForm({ categories }: PostFormProps) {
   const t = useI18n();
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: createPost,
+    onSuccess: (result) => {
+      if (result.success && result.data) {
+        toast.success(t("blog.new.success"));
+        queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+        router.push(`/blog/${result.data.slug}`);
+        router.refresh();
+      } else {
+        toast.error(
+          (!result.success && result.error) || t("blog.new.error"),
+        );
+      }
+    },
+    onError: () => toast.error(t("blog.new.error")),
+  });
 
   const schema = z.object({
     title: z
@@ -76,25 +95,13 @@ export function PostForm({ categories }: PostFormProps) {
   });
 
   const onSubmit = (values: FormValues) => {
-    startTransition(async () => {
-      const result = await createPost({
-        title: values.title,
-        excerpt: values.excerpt || undefined,
-        content: values.content,
-        coverImage: values.coverImage || undefined,
-        categorySlug: values.categorySlug,
-        published: values.published,
-      });
-
-      if (result.success && result.data) {
-        toast.success(t("blog.new.success"));
-        router.push(`/blog/${result.data.slug}`);
-        router.refresh();
-      } else {
-        toast.error(
-          (!result.success && result.error) || t("blog.new.error"),
-        );
-      }
+    mutation.mutate({
+      title: values.title,
+      excerpt: values.excerpt || undefined,
+      content: values.content,
+      coverImage: values.coverImage || undefined,
+      categorySlug: values.categorySlug,
+      published: values.published,
     });
   };
 
@@ -232,8 +239,8 @@ export function PostForm({ categories }: PostFormProps) {
         />
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={isPending}>
-            {isPending ? t("blog.new.submitting") : t("blog.new.submit")}
+          <Button type="submit" disabled={mutation.isPending}>
+            {mutation.isPending ? t("blog.new.submitting") : t("blog.new.submit")}
           </Button>
         </div>
       </form>
