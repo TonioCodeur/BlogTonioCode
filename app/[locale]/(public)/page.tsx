@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { getI18n, getCurrentLocale } from "@/locales/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { ArticleCard } from "@/components/blog/article-card";
+import { PostCard } from "@/components/blog/post-card";
 import { CategoryCard } from "@/components/blog/category-card";
 
 type Role = "USER" | "CUSTOMER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
@@ -20,8 +20,8 @@ export default async function HomePage() {
     ? ((session.user as { role?: string }).role as Role | undefined) ?? null
     : null) as Role | null;
 
-  const [articles, categories, articlesCount, authorsCount, commentsCount] = await Promise.all([
-    prisma.article
+  const [posts, categories, postsCount, authorsCount, commentsCount] = await Promise.all([
+    prisma.post
       .findMany({
         where: { published: true },
         orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
@@ -35,16 +35,16 @@ export default async function HomePage() {
     prisma.category
       .findMany({
         orderBy: { name: "asc" },
-        include: { _count: { select: { articles: true } } },
+        include: { _count: { select: { posts: true } } },
       })
       .catch(() => []),
-    prisma.article.count({ where: { published: true } }).catch(() => 0),
-    prisma.user.count({ where: { articles: { some: { published: true } } } }).catch(() => 0),
+    prisma.post.count({ where: { published: true } }).catch(() => 0),
+    prisma.user.count({ where: { posts: { some: { published: true } } } }).catch(() => 0),
     prisma.comment.count({ where: { deletedAt: null } }).catch(() => 0),
   ]);
 
-  const featured = articles[0];
-  const rest = articles.slice(1, 7);
+  const featured = posts[0];
+  const rest = posts.slice(1, 7);
 
   return (
     <div className="relative overflow-hidden bg-dots glow-halo">
@@ -80,7 +80,7 @@ export default async function HomePage() {
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Button asChild size="lg" className="btn-glow rounded-full px-6">
               <Link href="/blog">
-                {t("blog.hero.ctaArticles")}
+                {t("blog.hero.ctaPosts")}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -122,7 +122,7 @@ export default async function HomePage() {
             </div>
             <div className="mb-2 flex items-baseline gap-2">
               <span className="font-display text-6xl font-bold leading-none tracking-[-0.04em]">
-                {articlesCount.toLocaleString()}
+                {postsCount.toLocaleString()}
               </span>
               <span className="flex items-center gap-1 text-xs font-semibold text-primary">
                 <TrendingUp className="h-3 w-3" />
@@ -130,7 +130,7 @@ export default async function HomePage() {
               </span>
             </div>
             <div className="mb-6 text-sm text-muted-foreground">
-              {t("blog.stats.publishedArticles")}
+              {t("blog.stats.publishedPosts")}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -179,7 +179,7 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      {/* Latest articles */}
+      {/* Latest posts */}
       <section className="container mx-auto px-6 py-12 lg:px-10">
         <div className="mb-8 flex flex-wrap items-baseline gap-3">
           <h2 className="font-display text-3xl font-semibold tracking-[-0.02em]">
@@ -195,7 +195,7 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        {articles.length === 0 ? (
+        {posts.length === 0 ? (
           <div className="rounded-xl border border-dashed p-12 text-center">
             <Calendar className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
             <h3 className="text-lg font-semibold">{t("blog.empty.title")}</h3>
@@ -203,8 +203,8 @@ export default async function HomePage() {
           </div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {rest.map((article) => (
-              <ArticleCard key={article.id} article={article} locale={locale} />
+            {rest.map((post) => (
+              <PostCard key={post.id} post={post} locale={locale} />
             ))}
           </div>
         )}

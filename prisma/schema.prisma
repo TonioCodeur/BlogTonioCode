@@ -48,7 +48,7 @@ model User {
   botAutoMessages  BotAutoMessage[]  @relation("BotAutoMessagesByBot")
 
   // Blog
-  articles         Article[]         @relation("ArticleAuthor")
+  posts            Post[]            @relation("PostAuthor")
   comments         Comment[]         @relation("CommentAuthor")
 
   @@unique([email])
@@ -238,14 +238,14 @@ model Category {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  articles    Article[] @relation("ArticleCategory")
+  posts       Post[]    @relation("PostCategory")
 
   @@unique([slug])
   @@unique([name])
   @@map("category")
 }
 
-model Article {
+model Post {
   id            String    @id @default(cuid())
   title         String
   slug          String
@@ -259,19 +259,19 @@ model Article {
 
   // Author
   authorId      String
-  author        User      @relation("ArticleAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  author        User      @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   // Category — linked via Category.slug
   categorySlug  String
-  category      Category  @relation("ArticleCategory", fields: [categorySlug], references: [slug], onDelete: Restrict, onUpdate: Cascade)
+  category      Category  @relation("PostCategory", fields: [categorySlug], references: [slug], onDelete: Restrict, onUpdate: Cascade)
 
-  comments      Comment[] @relation("ArticleComments")
+  comments      Comment[] @relation("PostComments")
 
   @@unique([slug])
   @@index([authorId])
   @@index([categorySlug])
   @@index([published, publishedAt])
-  @@map("article")
+  @@map("post")
 }
 
 model Comment {
@@ -281,8 +281,8 @@ model Comment {
   updatedAt  DateTime @updatedAt
   deletedAt  DateTime?
 
-  articleId  String
-  article    Article  @relation("ArticleComments", fields: [articleId], references: [id], onDelete: Cascade)
+  postId     String
+  post       Post     @relation("PostComments", fields: [postId], references: [id], onDelete: Cascade)
 
   // authorId null => the user account was deleted; rendered as "deleted user".
   authorId   String?
@@ -293,7 +293,7 @@ model Comment {
   parent     Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies    Comment[] @relation("CommentReplies")
 
-  @@index([articleId, createdAt])
+  @@index([postId, createdAt])
   @@index([authorId])
   @@index([parentId])
   @@map("comment")

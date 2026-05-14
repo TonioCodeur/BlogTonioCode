@@ -9,7 +9,7 @@ import { createComment } from "@/lib/actions/blog";
 import { useI18n } from "@/locales/client";
 
 type CommentFormProps = {
-  articleId: string;
+  postId: string;
   parentId?: string;
   isReply?: boolean;
   onCancel?: () => void;
@@ -17,7 +17,7 @@ type CommentFormProps = {
 };
 
 export function CommentForm({
-  articleId,
+  postId,
   parentId,
   isReply = false,
   onCancel,
@@ -35,7 +35,7 @@ export function CommentForm({
 
     startTransition(async () => {
       const result = await createComment({
-        articleId,
+        postId,
         content: trimmed,
         parentId,
       });

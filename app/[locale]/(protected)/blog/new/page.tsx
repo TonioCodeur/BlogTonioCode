@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getI18n } from "@/locales/server";
-import { ArticleForm } from "@/components/blog/article-form";
+import { PostForm } from "@/components/blog/post-form";
 
-export default async function NewArticlePage() {
+export default async function NewPostPage() {
   const t = await getI18n();
 
   const categories = await prisma.category
@@ -20,7 +20,7 @@ export default async function NewArticlePage() {
         </h1>
         <p className="mt-2 text-muted-foreground">{t("blog.new.description")}</p>
       </header>
-      <ArticleForm categories={categories} />
+      <PostForm categories={categories} />
     </div>
   );
 }

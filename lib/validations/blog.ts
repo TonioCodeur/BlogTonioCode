@@ -10,7 +10,7 @@ const colorSchema = z
   .string()
   .regex(/^#[0-9a-fA-F]{6}$/, "Color must be a valid hex color (e.g. #ff00aa)");
 
-export const createArticleSchema = z.object({
+export const createPostSchema = z.object({
   title: z.string().min(3).max(200),
   slug: slugSchema.optional(),
   excerpt: z.string().max(500).optional(),
@@ -28,11 +28,11 @@ export const createCategorySchema = z.object({
 });
 
 export const createCommentSchema = z.object({
-  articleId: z.string().min(1),
+  postId: z.string().min(1),
   content: z.string().min(1).max(5000),
   parentId: z.string().min(1).optional(),
 });
 
-export type CreateArticleInput = z.infer<typeof createArticleSchema>;
+export type CreatePostInput = z.infer<typeof createPostSchema>;
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;

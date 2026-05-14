@@ -6,7 +6,7 @@ import { ArrowLeft, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
-import { ArticleDeleteButton } from "@/components/blog/article-delete-button";
+import { PostDeleteButton } from "@/components/blog/post-delete-button";
 import {
   CommentsSection,
   type CommentNode,
@@ -68,7 +68,7 @@ function buildCommentTree(rows: RawComment[]): CommentNode[] {
   return roots;
 }
 
-export default async function ArticlePage({ params }: PageProps) {
+export default async function PostPage({ params }: PageProps) {
   const { slug } = await params;
   const t = await getI18n();
   const locale = await getCurrentLocale();
@@ -76,7 +76,7 @@ export default async function ArticlePage({ params }: PageProps) {
     .getSession({ headers: await headers() })
     .catch(() => null);
 
-  const article = await prisma.article
+  const post = await prisma.post
     .findUnique({
       where: { slug },
       include: {
@@ -86,13 +86,13 @@ export default async function ArticlePage({ params }: PageProps) {
     })
     .catch(() => null);
 
-  if (!article || !article.published) {
+  if (!post || !post.published) {
     notFound();
   }
 
   const rawComments: RawComment[] = await prisma.comment
     .findMany({
-      where: { articleId: article.id },
+      where: { postId: post.id },
       orderBy: { createdAt: "asc" },
       select: {
         id: true,
@@ -108,16 +108,16 @@ export default async function ArticlePage({ params }: PageProps) {
 
   const comments = buildCommentTree(rawComments);
 
-  const publishedDate = article.publishedAt ?? article.createdAt;
+  const publishedDate = post.publishedAt ?? post.createdAt;
   const currentUserId = session?.user?.id ?? null;
   const currentUserRole = (session?.user
     ? ((session.user as { role?: string }).role as CommentRole | undefined) ??
       null
     : null) as CommentRole | null;
 
-  const isAuthor = !!currentUserId && currentUserId === article.authorId;
+  const isAuthor = !!currentUserId && currentUserId === post.authorId;
   const isMod = !!currentUserRole && MODERATOR_ROLES.includes(currentUserRole);
-  const canDeleteArticle = isAuthor || isMod;
+  const canDeletePost = isAuthor || isMod;
 
   return (
     <article className="container mx-auto max-w-3xl px-4 py-12 sm:py-16">
@@ -125,42 +125,40 @@ export default async function ArticlePage({ params }: PageProps) {
         <Button variant="ghost" size="sm" asChild className="-ml-3">
           <Link href="/blog">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            {t("blog.article.backToList")}
+            {t("blog.post.backToList")}
           </Link>
         </Button>
-        {canDeleteArticle ? (
-          <ArticleDeleteButton articleId={article.id} />
-        ) : null}
+        {canDeletePost ? <PostDeleteButton postId={post.id} /> : null}
       </div>
 
       <header className="mb-8">
-        <Link href={`/categories/${article.category.slug}`} className="inline-block">
+        <Link href={`/categories/${post.category.slug}`} className="inline-block">
           <Badge
             variant="secondary"
             className="mb-4"
             style={
-              article.category.color
-                ? { backgroundColor: `${article.category.color}20`, color: article.category.color }
+              post.category.color
+                ? { backgroundColor: `${post.category.color}20`, color: post.category.color }
                 : undefined
             }
           >
-            {article.category.name}
+            {post.category.name}
           </Badge>
         </Link>
 
         <h1 className="font-mono text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-          {article.title}
+          {post.title}
         </h1>
 
-        {article.excerpt ? (
-          <p className="mt-4 text-lg text-muted-foreground">{article.excerpt}</p>
+        {post.excerpt ? (
+          <p className="mt-4 text-lg text-muted-foreground">{post.excerpt}</p>
         ) : null}
 
         <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-b py-4 text-sm text-muted-foreground">
-          {article.author?.name ? (
+          {post.author?.name ? (
             <span>
-              <span className="text-muted-foreground">{t("blog.article.by")} </span>
-              <span className="font-medium text-foreground">{article.author.name}</span>
+              <span className="text-muted-foreground">{t("blog.post.by")} </span>
+              <span className="font-medium text-foreground">{post.author.name}</span>
             </span>
           ) : null}
           <span className="flex items-center gap-1">
@@ -170,11 +168,11 @@ export default async function ArticlePage({ params }: PageProps) {
         </div>
       </header>
 
-      {article.coverImage ? (
+      {post.coverImage ? (
         <div className="relative mb-8 aspect-video overflow-hidden rounded-xl border bg-muted">
           <Image
-            src={article.coverImage}
-            alt={article.title}
+            src={post.coverImage}
+            alt={post.title}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 768px"
@@ -183,10 +181,10 @@ export default async function ArticlePage({ params }: PageProps) {
         </div>
       ) : null}
 
-      <MarkdownRenderer>{article.content}</MarkdownRenderer>
+      <MarkdownRenderer>{post.content}</MarkdownRenderer>
 
       <CommentsSection
-        articleId={article.id}
+        postId={post.id}
         comments={comments}
         currentUserId={currentUserId}
         currentUserRole={currentUserRole}

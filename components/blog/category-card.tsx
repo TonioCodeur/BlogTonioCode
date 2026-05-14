@@ -16,13 +16,13 @@ type CategoryCardProps = {
     slug: string;
     description: string | null;
     color: string | null;
-    _count?: { articles: number };
+    _count?: { posts: number };
   };
   currentUserRole?: CategoryRole | null;
 };
 
 export function CategoryCard({ category, currentUserRole }: CategoryCardProps) {
-  const count = category._count?.articles ?? 0;
+  const count = category._count?.posts ?? 0;
   const isMod =
     !!currentUserRole && MODERATOR_ROLES.includes(currentUserRole);
 
@@ -52,7 +52,7 @@ export function CategoryCard({ category, currentUserRole }: CategoryCardProps) {
             </p>
           ) : null}
           <p className="mt-2 text-xs text-muted-foreground">
-            {count} article{count > 1 ? "s" : ""}
+            {count} post{count > 1 ? "s" : ""}
           </p>
         </div>
       </Link>

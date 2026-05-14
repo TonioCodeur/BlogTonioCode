@@ -285,7 +285,7 @@
   box-shadow: 0 0 calc(10px * var(--glow)) rgba(var(--accent-rgb) / calc(0.6 * var(--glow)));
 }
 
-/* Card cover gradient (used on article cards) */
+/* Card cover gradient (used on post cards) */
 .card-cover {
   background:
     radial-gradient(ellipse 240px 140px at 30% 20%, rgba(var(--accent-rgb) / 0.5), transparent 70%),

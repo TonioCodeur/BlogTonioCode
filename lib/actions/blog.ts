@@ -5,10 +5,10 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
-  createArticleSchema,
+  createPostSchema,
   createCategorySchema,
   createCommentSchema,
-  type CreateArticleInput,
+  type CreatePostInput,
   type CreateCategoryInput,
   type CreateCommentInput,
 } from "@/lib/validations/blog";
@@ -90,10 +90,10 @@ async function getActiveSanctionFlags(userId: string): Promise<SanctionFlags> {
   return { banned, muted };
 }
 
-async function ensureUniqueArticleSlug(base: string): Promise<string> {
+async function ensureUniquePostSlug(base: string): Promise<string> {
   let slug = base;
   let i = 1;
-  while (await prisma.article.findUnique({ where: { slug } })) {
+  while (await prisma.post.findUnique({ where: { slug } })) {
     slug = `${base}-${i}`;
     i++;
   }
@@ -110,24 +110,24 @@ async function ensureUniqueCategorySlug(base: string): Promise<string> {
   return slug;
 }
 
-function revalidateBlogPaths(articleSlug?: string): void {
+function revalidateBlogPaths(postSlug?: string): void {
   revalidatePath("/blog");
   revalidatePath("/categories");
-  if (articleSlug) revalidatePath(`/blog/${articleSlug}`);
+  if (postSlug) revalidatePath(`/blog/${postSlug}`);
 }
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "Unknown error";
 }
 
-// ─── createArticle ───────────────────────────────────────────────────────────
+// ─── createPost ──────────────────────────────────────────────────────────────
 
-export async function createArticle(
-  input: CreateArticleInput,
+export async function createPost(
+  input: CreatePostInput,
 ): Promise<ActionResult<{ id: string; slug: string }>> {
   try {
     const user = await requireAuthUser();
-    const data = createArticleSchema.parse(input);
+    const data = createPostSchema.parse(input);
 
     const flags = await getActiveSanctionFlags(user.id);
     if (flags.banned) return { success: false, error: "You are banned from creating content" };
@@ -140,9 +140,9 @@ export async function createArticle(
 
     const baseSlug = data.slug ?? slugify(data.title);
     if (!baseSlug) return { success: false, error: "Could not derive a valid slug from the title" };
-    const slug = await ensureUniqueArticleSlug(baseSlug);
+    const slug = await ensureUniquePostSlug(baseSlug);
 
-    const article = await prisma.article.create({
+    const post = await prisma.post.create({
       data: {
         title: data.title,
         slug,
@@ -157,33 +157,33 @@ export async function createArticle(
       select: { id: true, slug: true },
     });
 
-    revalidateBlogPaths(article.slug);
-    return { success: true, data: article };
+    revalidateBlogPaths(post.slug);
+    return { success: true, data: post };
   } catch (err) {
     return { success: false, error: errorMessage(err) };
   }
 }
 
-// ─── deleteArticle ───────────────────────────────────────────────────────────
+// ─── deletePost ──────────────────────────────────────────────────────────────
 
-export async function deleteArticle(id: string): Promise<ActionResult> {
+export async function deletePost(id: string): Promise<ActionResult> {
   try {
     if (!id || typeof id !== "string") return { success: false, error: "Invalid id" };
     const user = await requireAuthUser();
 
-    const article = await prisma.article.findUnique({
+    const post = await prisma.post.findUnique({
       where: { id },
       select: { id: true, slug: true, authorId: true },
     });
-    if (!article) return { success: false, error: "Article not found" };
+    if (!post) return { success: false, error: "Post not found" };
 
-    const isAuthor = article.authorId === user.id;
+    const isAuthor = post.authorId === user.id;
     if (!isAuthor && !isModerator(user.role)) {
       return { success: false, error: "Forbidden" };
     }
 
-    await prisma.article.delete({ where: { id } });
-    revalidateBlogPaths(article.slug);
+    await prisma.post.delete({ where: { id } });
+    revalidateBlogPaths(post.slug);
     return { success: true };
   } catch (err) {
     return { success: false, error: errorMessage(err) };
@@ -235,11 +235,11 @@ export async function deleteCategory(id: string): Promise<ActionResult> {
 
     const category = await prisma.category.findUnique({
       where: { id },
-      select: { id: true, _count: { select: { articles: true } } },
+      select: { id: true, _count: { select: { posts: true } } },
     });
     if (!category) return { success: false, error: "Category not found" };
-    if (category._count.articles > 0) {
-      return { success: false, error: "Cannot delete a category that has articles" };
+    if (category._count.posts > 0) {
+      return { success: false, error: "Cannot delete a category that has posts" };
     }
 
     await prisma.category.delete({ where: { id } });
@@ -263,27 +263,27 @@ export async function createComment(
     if (flags.banned) return { success: false, error: "You are banned from commenting" };
     if (flags.muted) return { success: false, error: "You are muted and cannot comment" };
 
-    const article = await prisma.article.findUnique({
-      where: { id: data.articleId },
+    const post = await prisma.post.findUnique({
+      where: { id: data.postId },
       select: { id: true, slug: true, published: true },
     });
-    if (!article) return { success: false, error: "Article not found" };
-    if (!article.published) return { success: false, error: "Cannot comment on an unpublished article" };
+    if (!post) return { success: false, error: "Post not found" };
+    if (!post.published) return { success: false, error: "Cannot comment on an unpublished post" };
 
     if (data.parentId) {
       const parent = await prisma.comment.findUnique({
         where: { id: data.parentId },
-        select: { articleId: true },
+        select: { postId: true },
       });
       if (!parent) return { success: false, error: "Parent comment not found" };
-      if (parent.articleId !== article.id) {
-        return { success: false, error: "Parent comment belongs to a different article" };
+      if (parent.postId !== post.id) {
+        return { success: false, error: "Parent comment belongs to a different post" };
       }
     }
 
     const comment = await prisma.comment.create({
       data: {
-        articleId: article.id,
+        postId: post.id,
         authorId: user.id,
         content: data.content,
         parentId: data.parentId ?? null,
@@ -291,7 +291,7 @@ export async function createComment(
       select: { id: true },
     });
 
-    revalidateBlogPaths(article.slug);
+    revalidateBlogPaths(post.slug);
     return { success: true, data: comment };
   } catch (err) {
     return { success: false, error: errorMessage(err) };
@@ -311,7 +311,7 @@ export async function deleteComment(id: string): Promise<ActionResult> {
         id: true,
         authorId: true,
         deletedAt: true,
-        article: { select: { slug: true } },
+        post: { select: { slug: true } },
       },
     });
     if (!comment) return { success: false, error: "Comment not found" };
@@ -329,7 +329,7 @@ export async function deleteComment(id: string): Promise<ActionResult> {
       data: { deletedAt: new Date() },
     });
 
-    revalidateBlogPaths(comment.article.slug);
+    revalidateBlogPaths(comment.post.slug);
     return { success: true };
   } catch (err) {
     return { success: false, error: errorMessage(err) };

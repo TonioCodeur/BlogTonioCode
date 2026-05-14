@@ -2,21 +2,21 @@
 
 import { useRouter } from "next/navigation";
 import { DeleteButton } from "@/components/blog/delete-button";
-import { deleteArticle } from "@/lib/actions/blog";
+import { deletePost } from "@/lib/actions/blog";
 import { useI18n } from "@/locales/client";
 
-type ArticleDeleteButtonProps = {
-  articleId: string;
+type PostDeleteButtonProps = {
+  postId: string;
 };
 
-export function ArticleDeleteButton({ articleId }: ArticleDeleteButtonProps) {
+export function PostDeleteButton({ postId }: PostDeleteButtonProps) {
   const t = useI18n();
   const router = useRouter();
 
   return (
     <DeleteButton
       onDelete={async () => {
-        const res = await deleteArticle(articleId);
+        const res = await deletePost(postId);
         if (res.success) {
           router.push("/blog");
           router.refresh();
@@ -24,8 +24,8 @@ export function ArticleDeleteButton({ articleId }: ArticleDeleteButtonProps) {
         }
         return { success: false, error: res.error };
       }}
-      confirmTitle={t("blog.actions.deleteArticle.confirmTitle")}
-      confirmDescription={t("blog.actions.deleteArticle.confirmDescription")}
+      confirmTitle={t("blog.actions.deletePost.confirmTitle")}
+      confirmDescription={t("blog.actions.deletePost.confirmDescription")}
       variant="outline"
       size="sm"
     />

@@ -31,7 +31,7 @@ export type CommentNode = {
 };
 
 type CommentsSectionProps = {
-  articleId: string;
+  postId: string;
   comments: CommentNode[];
   currentUserId: string | null;
   currentUserRole: CommentRole | null;
@@ -60,7 +60,7 @@ function canDelete(
 
 type CommentItemProps = {
   comment: CommentNode;
-  articleId: string;
+  postId: string;
   currentUserId: string | null;
   currentUserRole: CommentRole | null;
   locale: string;
@@ -69,7 +69,7 @@ type CommentItemProps = {
 
 function CommentItem({
   comment,
-  articleId,
+  postId,
   currentUserId,
   currentUserRole,
   locale,
@@ -140,7 +140,7 @@ function CommentItem({
         {showReplyForm ? (
           <div className="mt-3">
             <CommentForm
-              articleId={articleId}
+              postId={postId}
               parentId={comment.id}
               isReply
               onCancel={() => setShowReplyForm(false)}
@@ -156,7 +156,7 @@ function CommentItem({
             <CommentItem
               key={reply.id}
               comment={reply}
-              articleId={articleId}
+              postId={postId}
               currentUserId={currentUserId}
               currentUserRole={currentUserRole}
               locale={locale}
@@ -170,7 +170,7 @@ function CommentItem({
 }
 
 export function CommentsSection({
-  articleId,
+  postId,
   comments,
   currentUserId,
   currentUserRole,
@@ -178,7 +178,6 @@ export function CommentsSection({
 }: CommentsSectionProps) {
   const t = useI18n();
 
-  // Count includes replies, excludes soft-deleted comments only when their author isn't visible.
   const totalCount = comments.reduce(
     (sum, c) => sum + 1 + c.replies.length,
     0,
@@ -198,7 +197,7 @@ export function CommentsSection({
 
       <div className="mb-8">
         {currentUserId ? (
-          <CommentForm articleId={articleId} />
+          <CommentForm postId={postId} />
         ) : (
           <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
             {t("blog.comments.signInPrompt")}{" "}
@@ -220,7 +219,7 @@ export function CommentsSection({
             <CommentItem
               key={comment.id}
               comment={comment}
-              articleId={articleId}
+              postId={postId}
               currentUserId={currentUserId}
               currentUserRole={currentUserRole}
               locale={locale}

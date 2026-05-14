@@ -26,7 +26,7 @@ export function NewContentMenu() {
         <DropdownMenuItem asChild>
           <Link href="/blog/new" className="cursor-pointer">
             <FileText className="h-4 w-4" />
-            {t("nav.write.newArticle")}
+            {t("nav.write.newPost")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>

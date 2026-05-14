@@ -1,13 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { getI18n, getCurrentLocale } from "@/locales/server";
-import { ArticleCard } from "@/components/blog/article-card";
+import { PostCard } from "@/components/blog/post-card";
 import { Calendar } from "lucide-react";
 
 export default async function BlogIndexPage() {
   const t = await getI18n();
   const locale = await getCurrentLocale();
 
-  const articles = await prisma.article
+  const posts = await prisma.post
     .findMany({
       where: { published: true },
       orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
@@ -27,7 +27,7 @@ export default async function BlogIndexPage() {
         <p className="mt-3 text-lg text-muted-foreground">{t("blog.latest.subtitle")}</p>
       </header>
 
-      {articles.length === 0 ? (
+      {posts.length === 0 ? (
         <div className="rounded-xl border border-dashed p-12 text-center">
           <Calendar className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
           <h2 className="text-lg font-semibold">{t("blog.empty.title")}</h2>
@@ -35,8 +35,8 @@ export default async function BlogIndexPage() {
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {articles.map((article) => (
-            <ArticleCard key={article.id} article={article} locale={locale} />
+          {posts.map((post) => (
+            <PostCard key={post.id} post={post} locale={locale} />
           ))}
         </div>
       )}

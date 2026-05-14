@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getI18n, getCurrentLocale } from "@/locales/server";
-import { ArticleCard } from "@/components/blog/article-card";
+import { PostCard } from "@/components/blog/post-card";
 
 type PageProps = {
   params: Promise<{ slug: string; locale: string }>;
@@ -16,7 +16,7 @@ export default async function CategoryPage({ params }: PageProps) {
     .findUnique({
       where: { slug },
       include: {
-        articles: {
+        posts: {
           where: { published: true },
           orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
           include: {
@@ -41,16 +41,16 @@ export default async function CategoryPage({ params }: PageProps) {
         ) : null}
       </header>
 
-      {category.articles.length === 0 ? (
+      {category.posts.length === 0 ? (
         <div className="rounded-xl border border-dashed p-12 text-center text-muted-foreground">
           {t("blog.empty.description")}
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {category.articles.map((article) => (
-            <ArticleCard
-              key={article.id}
-              article={{ ...article, category: category }}
+          {category.posts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={{ ...post, category: category }}
               locale={locale}
             />
           ))}

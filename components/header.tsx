@@ -38,7 +38,7 @@ export async function Header() {
             href="/blog"
             className="text-muted-foreground transition-colors hover:text-foreground"
           >
-            {t("nav.articles")}
+            {t("nav.posts")}
           </Link>
           <Link
             href="/categories"

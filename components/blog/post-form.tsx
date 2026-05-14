@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MarkdownEditor } from "@/components/markdown-editor";
-import { createArticle } from "@/lib/actions/blog";
+import { createPost } from "@/lib/actions/blog";
 import { useI18n } from "@/locales/client";
 
 type CategoryOption = {
@@ -36,11 +36,11 @@ type CategoryOption = {
   name: string;
 };
 
-type ArticleFormProps = {
+type PostFormProps = {
   categories: CategoryOption[];
 };
 
-export function ArticleForm({ categories }: ArticleFormProps) {
+export function PostForm({ categories }: PostFormProps) {
   const t = useI18n();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -77,7 +77,7 @@ export function ArticleForm({ categories }: ArticleFormProps) {
 
   const onSubmit = (values: FormValues) => {
     startTransition(async () => {
-      const result = await createArticle({
+      const result = await createPost({
         title: values.title,
         excerpt: values.excerpt || undefined,
         content: values.content,
