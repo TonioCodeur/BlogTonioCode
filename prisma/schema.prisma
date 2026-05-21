@@ -55,6 +55,10 @@ model User {
   postsTrashed     Post[]            @relation("PostTrashedBy")
   commentsTrashed  Comment[]         @relation("CommentTrashedBy")
 
+  // Likes
+  postLikes        PostLike[]        @relation("PostLikesByUser")
+  commentLikes    CommentLike[]      @relation("CommentLikesByUser")
+
   @@unique([email])
   @@map("user")
 }
@@ -283,6 +287,9 @@ model Post {
 
   comments      Comment[] @relation("PostComments")
 
+  // Likes
+  likes         PostLike[] @relation("PostLikes")
+
   @@unique([slug])
   @@index([authorId])
   @@index([categorySlug])
@@ -321,12 +328,49 @@ model Comment {
   parent     Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies    Comment[] @relation("CommentReplies")
 
+  // Likes
+  likes      CommentLike[] @relation("CommentLikes")
+
   @@index([postId, createdAt])
   @@index([authorId])
   @@index([parentId])
   @@index([trashedAt])
   @@index([trashedById])
   @@map("comment")
+}
+
+// ============================================
+// Likes
+// ============================================
+
+model PostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post      Post     @relation("PostLikes", fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation("PostLikesByUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("post_like")
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  comment   Comment  @relation("CommentLikes", fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation("CommentLikesByUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@index([userId])
+  @@map("comment_like")
 }
 
 // ============================================

@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { getI18n, getCurrentLocale } from "@/locales/server";
 import { PostCard } from "@/components/blog/post-card";
+import { withPostLikeMeta } from "@/lib/blog/likes-include";
 
 type PageProps = {
   params: Promise<{ slug: string; locale: string }>;
@@ -11,6 +14,10 @@ export default async function CategoryPage({ params }: PageProps) {
   const { slug } = await params;
   const t = await getI18n();
   const locale = await getCurrentLocale();
+  const session = await auth.api
+    .getSession({ headers: await headers() })
+    .catch(() => null);
+  const currentUserId = session?.user?.id ?? null;
 
   const category = await prisma.category
     .findUnique({
@@ -23,6 +30,7 @@ export default async function CategoryPage({ params }: PageProps) {
           include: {
             author: { select: { name: true, image: true } },
             category: { select: { name: true, slug: true, color: true } },
+            ...withPostLikeMeta(currentUserId),
           },
         },
       },

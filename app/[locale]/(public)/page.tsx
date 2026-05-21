@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { PostCard } from "@/components/blog/post-card";
 import { CategoryCard } from "@/components/blog/category-card";
+import { withPostLikeMeta } from "@/lib/blog/likes-include";
 
 type Role = "USER" | "CUSTOMER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
 
@@ -19,6 +20,7 @@ export default async function HomePage() {
   const currentUserRole = (session?.user
     ? ((session.user as { role?: string }).role as Role | undefined) ?? null
     : null) as Role | null;
+  const currentUserId = session?.user?.id ?? null;
 
   const [posts, categories, postsCount, authorsCount, commentsCount] = await Promise.all([
     prisma.post
@@ -32,6 +34,7 @@ export default async function HomePage() {
           category: {
             select: { name: true, slug: true, color: true },
           },
+          ...withPostLikeMeta(currentUserId),
         },
       })
       .catch(() => []),

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { PostDeleteButton } from "@/components/blog/post-delete-button";
 import { MoveToTrashDialog } from "@/components/blog/move-to-trash-dialog";
+import { LikeButton } from "@/components/blog/like-button";
 import {
   CommentsSection,
   type CommentNode,
@@ -16,6 +17,10 @@ import {
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getI18n, getCurrentLocale } from "@/locales/server";
+import {
+  withCommentLikeMeta,
+  withPostLikeMeta,
+} from "@/lib/blog/likes-include";
 
 type PageProps = {
   params: Promise<{ slug: string; locale: string }>;
@@ -44,6 +49,8 @@ type RawComment = {
   authorId: string | null;
   parentId: string | null;
   author: { id: string; name: string; image: string | null } | null;
+  likeCount: number;
+  likedByMe: boolean;
 };
 
 function buildCommentTree(rows: RawComment[]): CommentNode[] {
@@ -77,6 +84,7 @@ export default async function PostPage({ params }: PageProps) {
   const session = await auth.api
     .getSession({ headers: await headers() })
     .catch(() => null);
+  const currentUserId = session?.user?.id ?? null;
 
   const post = await prisma.post
     .findUnique({
@@ -84,6 +92,7 @@ export default async function PostPage({ params }: PageProps) {
       include: {
         author: { select: { id: true, name: true, image: true } },
         category: { select: { name: true, slug: true, color: true } },
+        ...withPostLikeMeta(currentUserId),
       },
     })
     .catch(() => null);
@@ -93,49 +102,71 @@ export default async function PostPage({ params }: PageProps) {
     notFound();
   }
 
+  // Likes-aware comment fetch. `_count.likes` is always included; `likes` is
+  // a 0/1-length array filtered to the current user (only when signed in).
+  // The combination is needed even for trashed/deleted comments since the
+  // moderation tree is rebuilt in JS afterwards; the count for hidden rows
+  // is dropped at the mapping step below (spec §A.2.3).
   const rawCommentsRows = await prisma.comment
     .findMany({
       where: { postId: post.id },
       orderBy: { createdAt: "asc" },
-      select: {
-        id: true,
-        content: true,
-        createdAt: true,
-        deletedAt: true,
-        trashedAt: true,
-        authorId: true,
-        parentId: true,
+      include: {
         author: { select: { id: true, name: true, image: true } },
+        ...withCommentLikeMeta(currentUserId),
       },
     })
-    .catch(() => [] as Array<{
-      id: string;
-      content: string;
-      createdAt: Date;
-      deletedAt: Date | null;
-      trashedAt: Date | null;
-      authorId: string | null;
-      parentId: string | null;
-      author: { id: string; name: string; image: string | null } | null;
-    }>);
+    .catch(
+      () =>
+        [] as Array<{
+          id: string;
+          content: string;
+          createdAt: Date;
+          deletedAt: Date | null;
+          trashedAt: Date | null;
+          authorId: string | null;
+          parentId: string | null;
+          author: { id: string; name: string; image: string | null } | null;
+          _count: { likes: number };
+          likes?: Array<{ id: string }>;
+        }>,
+    );
 
   // Never expose the original content of moderated/author-deleted comments to
   // the public — the front renders them as tombstones. We still keep them in
-  // the tree to preserve reply structure (spec §2.3).
-  const rawComments: RawComment[] = rawCommentsRows.map((c) => ({
-    ...c,
-    content: c.trashedAt || c.deletedAt ? "" : c.content,
-    author: c.trashedAt || c.deletedAt ? null : c.author,
-  }));
+  // the tree to preserve reply structure (spec §2.3). Likes counts are also
+  // hidden for those rows (spec §A.2.3).
+  const rawComments: RawComment[] = rawCommentsRows.map((c) => {
+    const hidden = !!(c.trashedAt || c.deletedAt);
+    return {
+      id: c.id,
+      content: hidden ? "" : c.content,
+      createdAt: c.createdAt,
+      deletedAt: c.deletedAt,
+      trashedAt: c.trashedAt,
+      authorId: c.authorId,
+      parentId: c.parentId,
+      author: hidden ? null : c.author,
+      likeCount: hidden ? 0 : c._count.likes,
+      likedByMe: hidden ? false : (c.likes?.length ?? 0) > 0,
+    };
+  });
 
   const comments = buildCommentTree(rawComments);
 
   const publishedDate = post.publishedAt ?? post.createdAt;
-  const currentUserId = session?.user?.id ?? null;
   const currentUserRole = (session?.user
     ? ((session.user as { role?: string }).role as CommentRole | undefined) ??
       null
     : null) as CommentRole | null;
+  const currentUserEmailVerified = !!(session?.user as
+    | { emailVerified?: boolean }
+    | undefined)?.emailVerified;
+
+  // `_count.likes` is always populated by `withPostLikeMeta`; `likes` is only
+  // included when the visitor is signed in (0/1-length array filtered by user).
+  const postLikeCount = post._count.likes;
+  const postLikedByMe = (post.likes?.length ?? 0) > 0;
 
   const isAuthor = !!currentUserId && currentUserId === post.authorId;
   const isMod = !!currentUserRole && MODERATOR_ROLES.includes(currentUserRole);
@@ -199,6 +230,17 @@ export default async function PostPage({ params }: PageProps) {
             <Calendar className="h-4 w-4" />
             {formatDate(publishedDate, locale)}
           </span>
+          <span className="flex-1" />
+          <LikeButton
+            targetType="post"
+            targetId={post.id}
+            postSlug={post.slug}
+            initialCount={postLikeCount}
+            initialLiked={postLikedByMe}
+            isAuthenticated={!!currentUserId}
+            requiresEmailVerification={!!currentUserId && !currentUserEmailVerified}
+            size="md"
+          />
         </div>
       </header>
 
@@ -222,6 +264,7 @@ export default async function PostPage({ params }: PageProps) {
         comments={comments}
         currentUserId={currentUserId}
         currentUserRole={currentUserRole}
+        currentUserEmailVerified={currentUserEmailVerified}
         locale={locale}
       />
     </article>

@@ -658,4 +658,35 @@ export default {
 
   // Sidebar — trash link
   'sidebar.nav.adminTrash': 'Trash',
+
+  // Likes (spec §A.5.4)
+  'likes.button.likeAria': 'Like',
+  'likes.button.unlikeAria': 'Unlike',
+  'likes.toast.signInRequired': 'Sign in to like this content',
+  'likes.toast.signInLink': 'Sign in',
+  'likes.toast.verifyEmailRequired': 'Verify your email to like content',
+  'likes.toast.error': 'Could not update like. Please try again.',
+  'likes.toast.banned': 'You are banned and cannot like content.',
+
+  // Cover image upload (spec §B.5.4)
+  'upload.tabs.upload': 'Upload',
+  'upload.tabs.url': 'External URL',
+  'upload.dropzone.empty': 'Choose an image to upload',
+  'upload.dropzone.button': 'Choose a file',
+  'upload.dropzone.replace': 'Choose another file',
+  'upload.preview.replace': 'Replace',
+  'upload.preview.remove': 'Remove',
+  'upload.uploading': 'Uploading…',
+  'upload.success': 'Image uploaded',
+  'upload.actions.send': 'Upload',
+  'upload.actions.cancel': 'Cancel',
+  'upload.actions.remove': 'Remove',
+  'upload.current.title': 'Current cover image',
+  'upload.url.hint': 'Paste a public image URL (JPEG, PNG or WebP).',
+  'upload.errors.tooLarge': 'Image is too large (max 1 MB).',
+  'upload.errors.invalidFormat': 'Unsupported format (JPEG, PNG or WebP only).',
+  'upload.errors.network': 'Upload failed, please try again.',
+  'upload.errors.unauthorized': 'You are not allowed to upload an image.',
+  'upload.constraints.size': 'Max 1 MB',
+  'upload.constraints.formats': 'JPEG, PNG or WebP',
 } as const;

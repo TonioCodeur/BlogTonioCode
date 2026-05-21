@@ -1,11 +1,18 @@
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { getI18n, getCurrentLocale } from "@/locales/server";
 import { PostCard } from "@/components/blog/post-card";
+import { withPostLikeMeta } from "@/lib/blog/likes-include";
 import { Calendar } from "lucide-react";
 
 export default async function BlogIndexPage() {
   const t = await getI18n();
   const locale = await getCurrentLocale();
+  const session = await auth.api
+    .getSession({ headers: await headers() })
+    .catch(() => null);
+  const currentUserId = session?.user?.id ?? null;
 
   const posts = await prisma.post
     .findMany({
@@ -15,6 +22,7 @@ export default async function BlogIndexPage() {
       include: {
         author: { select: { name: true, image: true } },
         category: { select: { name: true, slug: true, color: true } },
+        ...withPostLikeMeta(currentUserId),
       },
     })
     .catch(() => []);

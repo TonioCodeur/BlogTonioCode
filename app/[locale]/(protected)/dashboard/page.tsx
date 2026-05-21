@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { getI18n, getCurrentLocale } from "@/locales/server";
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/blog/post-card";
+import { withPostLikeMeta } from "@/lib/blog/likes-include";
 
 export default async function DashboardPage() {
   const t = await getI18n();
@@ -28,6 +29,7 @@ export default async function DashboardPage() {
       include: {
         author: { select: { name: true, image: true } },
         category: { select: { name: true, slug: true, color: true } },
+        ...withPostLikeMeta(session.user.id),
       },
     })
     .catch(() => []);

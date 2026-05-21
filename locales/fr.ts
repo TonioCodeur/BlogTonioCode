@@ -658,4 +658,35 @@ export default {
 
   // Sidebar — lien corbeille
   'sidebar.nav.adminTrash': 'Corbeille',
+
+  // Likes (spec §A.5.4)
+  'likes.button.likeAria': 'Aimer',
+  'likes.button.unlikeAria': 'Ne plus aimer',
+  'likes.toast.signInRequired': 'Connectez-vous pour aimer ce contenu',
+  'likes.toast.signInLink': 'Se connecter',
+  'likes.toast.verifyEmailRequired': 'Vérifiez votre email pour pouvoir aimer du contenu',
+  'likes.toast.error': 'Impossible de mettre à jour le like. Veuillez réessayer.',
+  'likes.toast.banned': 'Vous êtes banni et ne pouvez pas aimer du contenu.',
+
+  // Upload image de couverture (spec §B.5.4)
+  'upload.tabs.upload': 'Téléverser',
+  'upload.tabs.url': 'URL externe',
+  'upload.dropzone.empty': 'Choisissez une image à téléverser',
+  'upload.dropzone.button': 'Choisir un fichier',
+  'upload.dropzone.replace': 'Choisir un autre fichier',
+  'upload.preview.replace': 'Remplacer',
+  'upload.preview.remove': 'Retirer',
+  'upload.uploading': 'Envoi…',
+  'upload.success': 'Image téléversée',
+  'upload.actions.send': 'Téléverser',
+  'upload.actions.cancel': 'Annuler',
+  'upload.actions.remove': 'Retirer',
+  'upload.current.title': 'Image de couverture actuelle',
+  'upload.url.hint': 'Collez une URL d\'image publique (JPEG, PNG ou WebP).',
+  'upload.errors.tooLarge': 'Image trop volumineuse (max 1 Mo).',
+  'upload.errors.invalidFormat': 'Format non supporté (JPEG, PNG ou WebP uniquement).',
+  'upload.errors.network': 'Erreur d\'envoi, réessayez.',
+  'upload.errors.unauthorized': 'Vous n\'êtes pas autorisé à téléverser une image.',
+  'upload.constraints.size': 'Max 1 Mo',
+  'upload.constraints.formats': 'JPEG, PNG ou WebP',
 } as const;

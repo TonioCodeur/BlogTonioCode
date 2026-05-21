@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { MarkdownComment } from "@/components/markdown-comment";
 import { CommentForm } from "@/components/blog/comment-form";
 import { DeleteButton } from "@/components/blog/delete-button";
+import { LikeButton } from "@/components/blog/like-button";
 import { MoveToTrashDialog } from "@/components/blog/move-to-trash-dialog";
 import { TrashTombstone } from "@/components/blog/trash-tombstone";
 import { deleteComment } from "@/lib/actions/blog";
@@ -32,6 +33,10 @@ export type CommentNode = {
   author: { id: string; name: string; image: string | null } | null;
   parentId: string | null;
   replies: CommentNode[];
+  /** Total likes on this comment (0 when hidden by trash/deletion). */
+  likeCount: number;
+  /** Whether the current viewer has liked this comment (false when anonymous or hidden). */
+  likedByMe: boolean;
 };
 
 type CommentsSectionProps = {
@@ -39,6 +44,8 @@ type CommentsSectionProps = {
   comments: CommentNode[];
   currentUserId: string | null;
   currentUserRole: CommentRole | null;
+  /** When false (authed user without verified email), like clicks trigger a toast. */
+  currentUserEmailVerified?: boolean;
   locale: string;
 };
 
@@ -69,6 +76,7 @@ type CommentItemProps = {
   postId: string;
   currentUserId: string | null;
   currentUserRole: CommentRole | null;
+  currentUserEmailVerified: boolean;
   locale: string;
   isReply?: boolean;
 };
@@ -78,6 +86,7 @@ function CommentItem({
   postId,
   currentUserId,
   currentUserRole,
+  currentUserEmailVerified,
   locale,
   isReply = false,
 }: CommentItemProps) {
@@ -148,16 +157,28 @@ function CommentItem({
           <MarkdownComment>{comment.content}</MarkdownComment>
         )}
 
-        {!isHidden && !isReply && currentUserId ? (
-          <div className="mt-2">
-            <Button
-              variant="ghost"
+        {!isHidden ? (
+          <div className="mt-2 flex items-center gap-1">
+            <LikeButton
+              targetType="comment"
+              targetId={comment.id}
+              postId={postId}
+              initialCount={comment.likeCount}
+              initialLiked={comment.likedByMe}
+              isAuthenticated={!!currentUserId}
+              requiresEmailVerification={!!currentUserId && !currentUserEmailVerified}
               size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={() => setShowReplyForm((v) => !v)}
-            >
-              {t("blog.comments.reply")}
-            </Button>
+            />
+            {!isReply && currentUserId ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => setShowReplyForm((v) => !v)}
+              >
+                {t("blog.comments.reply")}
+              </Button>
+            ) : null}
           </div>
         ) : null}
 
@@ -183,6 +204,7 @@ function CommentItem({
               postId={postId}
               currentUserId={currentUserId}
               currentUserRole={currentUserRole}
+              currentUserEmailVerified={currentUserEmailVerified}
               locale={locale}
               isReply
             />
@@ -198,6 +220,7 @@ export function CommentsSection({
   comments,
   currentUserId,
   currentUserRole,
+  currentUserEmailVerified = false,
   locale,
 }: CommentsSectionProps) {
   const t = useI18n();
@@ -246,6 +269,7 @@ export function CommentsSection({
               postId={postId}
               currentUserId={currentUserId}
               currentUserRole={currentUserRole}
+              currentUserEmailVerified={currentUserEmailVerified}
               locale={locale}
             />
           ))}

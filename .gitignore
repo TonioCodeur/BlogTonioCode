@@ -56,3 +56,6 @@ prisma/migrations
 .vercel
 # claude
 /worktrees/*/*.*
+
+# user uploads (cover images written by /api/upload/post-cover)
+/public/uploads/

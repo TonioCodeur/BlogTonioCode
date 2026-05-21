@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -28,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MarkdownEditor } from "@/components/markdown-editor";
+import { CoverImagePicker } from "@/components/blog/cover-image-picker";
 import { createPost } from "@/lib/actions/blog";
 import { useI18n } from "@/locales/client";
 import { queryKeys } from "@/lib/queries";
@@ -45,6 +47,8 @@ export function PostForm({ categories }: PostFormProps) {
   const t = useI18n();
   const router = useRouter();
   const queryClient = useQueryClient();
+  // Disable submit while the cover-image upload is in flight (spec §B.5.2).
+  const [isCoverUploading, setIsCoverUploading] = useState(false);
 
   const mutation = useMutation({
     mutationFn: createPost,
@@ -71,9 +75,14 @@ export function PostForm({ categories }: PostFormProps) {
       .max(200, t("blog.new.validation.titleTooLong")),
     excerpt: z.string().max(500).optional().or(z.literal("")),
     content: z.string().min(1, t("blog.new.validation.contentRequired")),
+    // Accept either a full external URL OR a server-relative upload path
+    // (e.g. `/uploads/posts/<cuid>.png` returned by the upload route handler).
     coverImage: z
       .string()
-      .url(t("blog.new.validation.coverInvalid"))
+      .refine(
+        (v) => v === "" || /^https?:\/\//.test(v) || v.startsWith("/"),
+        { message: t("blog.new.validation.coverInvalid") },
+      )
       .optional()
       .or(z.literal("")),
     categorySlug: z.string().min(1, t("blog.new.validation.categoryRequired")),
@@ -188,10 +197,11 @@ export function PostForm({ categories }: PostFormProps) {
             <FormItem>
               <FormLabel>{t("blog.new.fields.cover")}</FormLabel>
               <FormControl>
-                <Input
-                  type="url"
-                  placeholder={t("blog.new.fields.coverPlaceholder")}
-                  {...field}
+                <CoverImagePicker
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  disabled={mutation.isPending}
+                  onUploadingChange={setIsCoverUploading}
                 />
               </FormControl>
               <FormMessage />
@@ -239,7 +249,10 @@ export function PostForm({ categories }: PostFormProps) {
         />
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={mutation.isPending}>
+          <Button
+            type="submit"
+            disabled={mutation.isPending || isCoverUploading}
+          >
             {mutation.isPending ? t("blog.new.submitting") : t("blog.new.submit")}
           </Button>
         </div>
