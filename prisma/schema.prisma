@@ -51,6 +51,10 @@ model User {
   posts            Post[]            @relation("PostAuthor")
   comments         Comment[]         @relation("CommentAuthor")
 
+  // Moderation trash (soft-delete by moderator)
+  postsTrashed     Post[]            @relation("PostTrashedBy")
+  commentsTrashed  Comment[]         @relation("CommentTrashedBy")
+
   @@unique([email])
   @@map("user")
 }
@@ -257,6 +261,18 @@ model Post {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Soft-delete by the author (analogous to Comment.deletedAt).
+  deletedAt     DateTime?
+
+  // Moderation trash — null = not in trash.
+  trashedAt     DateTime?
+  trashedById   String?
+  trashedBy     User?     @relation("PostTrashedBy", fields: [trashedById], references: [id], onDelete: SetNull)
+  // Reason shown to the author (max 500 chars enforced in actions).
+  trashReason   String?
+  // Internal admin notes (max 2000 chars enforced in actions); never exposed to the author.
+  trashNotes    String?
+
   // Author
   authorId      String
   author        User      @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
@@ -271,6 +287,8 @@ model Post {
   @@index([authorId])
   @@index([categorySlug])
   @@index([published, publishedAt])
+  @@index([trashedAt])
+  @@index([trashedById])
   @@map("post")
 }
 
@@ -279,7 +297,17 @@ model Comment {
   content    String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  // Soft-delete by the comment author.
   deletedAt  DateTime?
+
+  // Moderation trash — null = not in trash.
+  trashedAt    DateTime?
+  trashedById  String?
+  trashedBy    User?     @relation("CommentTrashedBy", fields: [trashedById], references: [id], onDelete: SetNull)
+  // Reason shown to the author (max 500 chars enforced in actions).
+  trashReason  String?
+  // Internal admin notes (max 2000 chars enforced in actions); never exposed to the author.
+  trashNotes   String?
 
   postId     String
   post       Post     @relation("PostComments", fields: [postId], references: [id], onDelete: Cascade)
@@ -296,6 +324,8 @@ model Comment {
   @@index([postId, createdAt])
   @@index([authorId])
   @@index([parentId])
+  @@index([trashedAt])
+  @@index([trashedById])
   @@map("comment")
 }
 

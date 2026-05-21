@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { PostDeleteButton } from "@/components/blog/post-delete-button";
+import { MoveToTrashDialog } from "@/components/blog/move-to-trash-dialog";
 import {
   CommentsSection,
   type CommentNode,
@@ -39,6 +40,7 @@ type RawComment = {
   content: string;
   createdAt: Date;
   deletedAt: Date | null;
+  trashedAt: Date | null;
   authorId: string | null;
   parentId: string | null;
   author: { id: string; name: string; image: string | null } | null;
@@ -86,11 +88,12 @@ export default async function PostPage({ params }: PageProps) {
     })
     .catch(() => null);
 
-  if (!post || !post.published) {
+  // Hide moderated or author-deleted posts from the public site (404).
+  if (!post || !post.published || post.trashedAt || post.deletedAt) {
     notFound();
   }
 
-  const rawComments: RawComment[] = await prisma.comment
+  const rawCommentsRows = await prisma.comment
     .findMany({
       where: { postId: post.id },
       orderBy: { createdAt: "asc" },
@@ -99,12 +102,31 @@ export default async function PostPage({ params }: PageProps) {
         content: true,
         createdAt: true,
         deletedAt: true,
+        trashedAt: true,
         authorId: true,
         parentId: true,
         author: { select: { id: true, name: true, image: true } },
       },
     })
-    .catch(() => []);
+    .catch(() => [] as Array<{
+      id: string;
+      content: string;
+      createdAt: Date;
+      deletedAt: Date | null;
+      trashedAt: Date | null;
+      authorId: string | null;
+      parentId: string | null;
+      author: { id: string; name: string; image: string | null } | null;
+    }>);
+
+  // Never expose the original content of moderated/author-deleted comments to
+  // the public — the front renders them as tombstones. We still keep them in
+  // the tree to preserve reply structure (spec §2.3).
+  const rawComments: RawComment[] = rawCommentsRows.map((c) => ({
+    ...c,
+    content: c.trashedAt || c.deletedAt ? "" : c.content,
+    author: c.trashedAt || c.deletedAt ? null : c.author,
+  }));
 
   const comments = buildCommentTree(rawComments);
 
@@ -117,7 +139,9 @@ export default async function PostPage({ params }: PageProps) {
 
   const isAuthor = !!currentUserId && currentUserId === post.authorId;
   const isMod = !!currentUserRole && MODERATOR_ROLES.includes(currentUserRole);
-  const canDeletePost = isAuthor || isMod;
+  // Author can soft-delete their own post. Moderators have a separate
+  // "move to trash" flow (with reason) — they no longer use the plain delete.
+  const canAuthorDelete = isAuthor;
 
   return (
     <article className="container mx-auto max-w-3xl px-4 py-12 sm:py-16">
@@ -128,7 +152,17 @@ export default async function PostPage({ params }: PageProps) {
             {t("blog.post.backToList")}
           </Link>
         </Button>
-        {canDeletePost ? <PostDeleteButton postId={post.id} /> : null}
+        <div className="flex items-center gap-2">
+          {canAuthorDelete ? (
+            <PostDeleteButton
+              postId={post.id}
+              underModeration={!!post.trashedAt}
+            />
+          ) : null}
+          {isMod ? (
+            <MoveToTrashDialog target={{ kind: "post", postId: post.id }} />
+          ) : null}
+        </div>
       </div>
 
       <header className="mb-8">

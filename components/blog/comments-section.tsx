@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { MarkdownComment } from "@/components/markdown-comment";
 import { CommentForm } from "@/components/blog/comment-form";
 import { DeleteButton } from "@/components/blog/delete-button";
+import { MoveToTrashDialog } from "@/components/blog/move-to-trash-dialog";
+import { TrashTombstone } from "@/components/blog/trash-tombstone";
 import { deleteComment } from "@/lib/actions/blog";
 import { useI18n } from "@/locales/client";
 
@@ -24,6 +26,8 @@ export type CommentNode = {
   content: string;
   createdAt: Date;
   deletedAt: Date | null;
+  /** Moderation trash timestamp — when not null, comment is hidden from public. */
+  trashedAt: Date | null;
   authorId: string | null;
   author: { id: string; name: string; image: string | null } | null;
   parentId: string | null;
@@ -48,13 +52,15 @@ function formatDate(date: Date, locale: string) {
   }).format(date);
 }
 
-function canDelete(
+function isModeratorRole(role: CommentRole | null): boolean {
+  return !!role && MODERATOR_ROLES.includes(role);
+}
+
+function canAuthorDelete(
   comment: CommentNode,
   currentUserId: string | null,
-  currentUserRole: CommentRole | null,
 ): boolean {
   if (!currentUserId) return false;
-  if (currentUserRole && MODERATOR_ROLES.includes(currentUserRole)) return true;
   return comment.authorId === currentUserId;
 }
 
@@ -79,11 +85,20 @@ function CommentItem({
   const router = useRouter();
   const [showReplyForm, setShowReplyForm] = useState(false);
 
-  const isDeleted = !!comment.deletedAt;
-  const showDelete =
-    !isDeleted && canDelete(comment, currentUserId, currentUserRole);
-  const authorName =
-    comment.author?.name ?? t("messages.thread.unknownUser");
+  const isTrashed = !!comment.trashedAt;
+  const isAuthorDeleted = !!comment.deletedAt && !isTrashed;
+  const isHidden = isTrashed || isAuthorDeleted;
+  const isMod = isModeratorRole(currentUserRole);
+  const isAuthor = canAuthorDelete(comment, currentUserId);
+
+  // Author can soft-delete only if their comment is still visible (not under moderation).
+  const showAuthorDelete = !isHidden && isAuthor;
+  // Moderators can move a still-visible comment to trash.
+  const showMoveToTrash = !isHidden && isMod && !isAuthor;
+
+  const authorName = isHidden
+    ? t("messages.thread.unknownUser")
+    : comment.author?.name ?? t("messages.thread.unknownUser");
 
   return (
     <article className="space-y-3">
@@ -96,35 +111,44 @@ function CommentItem({
               {formatDate(comment.createdAt, locale)}
             </time>
           </div>
-          {showDelete ? (
-            <DeleteButton
-              onDelete={async () => {
-                const res = await deleteComment(comment.id);
-                if (res.success) {
-                  router.refresh();
-                  return { success: true };
-                }
-                return { success: false, error: res.error };
-              }}
-              confirmTitle={t("blog.comments.delete.confirmTitle")}
-              confirmDescription={t("blog.comments.delete.confirmDescription")}
-              successMessage={t("blog.comments.delete.success")}
-              errorMessage={t("blog.comments.delete.error")}
-              iconOnly
-              variant="ghost"
-            />
-          ) : null}
+          <div className="flex items-center gap-1">
+            {showAuthorDelete ? (
+              <DeleteButton
+                onDelete={async () => {
+                  const res = await deleteComment(comment.id);
+                  if (res.success) {
+                    router.refresh();
+                    return { success: true };
+                  }
+                  return { success: false, error: res.error };
+                }}
+                confirmTitle={t("blog.comments.delete.confirmTitle")}
+                confirmDescription={t("blog.comments.delete.confirmDescription")}
+                successMessage={t("blog.comments.delete.success")}
+                errorMessage={t("blog.comments.delete.error")}
+                iconOnly
+                variant="ghost"
+              />
+            ) : null}
+            {showMoveToTrash ? (
+              <MoveToTrashDialog
+                target={{ kind: "comment", commentId: comment.id }}
+                iconOnly
+                variant="ghost"
+              />
+            ) : null}
+          </div>
         </header>
 
-        {isDeleted ? (
-          <p className="italic text-muted-foreground">
-            {t("blog.comments.deleted")}
-          </p>
+        {isTrashed ? (
+          <TrashTombstone state="TRASHED" />
+        ) : isAuthorDeleted ? (
+          <TrashTombstone state="AUTHOR_DELETED" />
         ) : (
           <MarkdownComment>{comment.content}</MarkdownComment>
         )}
 
-        {!isDeleted && !isReply && currentUserId ? (
+        {!isHidden && !isReply && currentUserId ? (
           <div className="mt-2">
             <Button
               variant="ghost"

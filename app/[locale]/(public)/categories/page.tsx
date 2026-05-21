@@ -18,7 +18,14 @@ export default async function CategoriesIndexPage() {
   const categories = await prisma.category
     .findMany({
       orderBy: { name: "asc" },
-      include: { _count: { select: { posts: true } } },
+      include: {
+        _count: {
+          select: {
+            // Count only publicly visible posts.
+            posts: { where: { trashedAt: null, deletedAt: null, published: true } },
+          },
+        },
+      },
     })
     .catch(() => []);
 

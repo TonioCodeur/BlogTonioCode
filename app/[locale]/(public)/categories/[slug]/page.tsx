@@ -17,7 +17,8 @@ export default async function CategoryPage({ params }: PageProps) {
       where: { slug },
       include: {
         posts: {
-          where: { published: true },
+          // Exclude posts moderated to trash or soft-deleted by their author.
+          where: { published: true, trashedAt: null, deletedAt: null },
           orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
           include: {
             author: { select: { name: true, image: true } },

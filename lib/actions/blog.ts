@@ -15,7 +15,7 @@ import {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type ActionResult<T = undefined> =
+export type ActionResult<T = undefined> =
   | { success: true; data?: T }
   | { success: false; error: string };
 
@@ -165,6 +165,14 @@ export async function createPost(
 }
 
 // ─── deletePost ──────────────────────────────────────────────────────────────
+//
+// Behaviour per trash spec §4.6:
+//   - Author of the post:  soft-delete (deletedAt = now()).
+//                          Refused if the post is already TRASHED by moderation.
+//   - MODERATOR+:          must call moveToTrashPost() from `lib/actions/trash.ts`
+//                          (we deprecate the previous direct hard-delete path
+//                          to prevent destructive moderation without a reason).
+//   - Anyone else:         Forbidden.
 
 export async function deletePost(id: string): Promise<ActionResult> {
   try {
@@ -173,16 +181,36 @@ export async function deletePost(id: string): Promise<ActionResult> {
 
     const post = await prisma.post.findUnique({
       where: { id },
-      select: { id: true, slug: true, authorId: true },
+      select: { id: true, slug: true, authorId: true, trashedAt: true, deletedAt: true },
     });
     if (!post) return { success: false, error: "Post not found" };
 
     const isAuthor = post.authorId === user.id;
-    if (!isAuthor && !isModerator(user.role)) {
+
+    if (!isAuthor) {
+      // MODERATOR+ must go through moveToTrashPost (requires a reason).
+      // We refuse here rather than silently re-route to enforce a reason field.
+      if (isModerator(user.role)) {
+        return {
+          success: false,
+          error: "Moderators must use moveToTrashPost with a reason",
+        };
+      }
       return { success: false, error: "Forbidden" };
     }
 
-    await prisma.post.delete({ where: { id } });
+    // Author path: refuse if the content is under moderation.
+    if (post.trashedAt) {
+      return { success: false, error: "Content is under moderation" };
+    }
+    if (post.deletedAt) {
+      return { success: false, error: "Post already deleted" };
+    }
+
+    await prisma.post.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
     revalidateBlogPaths(post.slug);
     return { success: true };
   } catch (err) {
@@ -299,6 +327,12 @@ export async function createComment(
 }
 
 // ─── deleteComment ───────────────────────────────────────────────────────────
+//
+// Behaviour per trash spec §4.6:
+//   - Author: soft-delete via deletedAt. Refused if the comment is already
+//             TRASHED by moderation.
+//   - MODERATOR+: must call moveToTrashComment() from `lib/actions/trash.ts`.
+//   - Anyone else: Forbidden.
 
 export async function deleteComment(id: string): Promise<ActionResult> {
   try {
@@ -311,19 +345,32 @@ export async function deleteComment(id: string): Promise<ActionResult> {
         id: true,
         authorId: true,
         deletedAt: true,
+        trashedAt: true,
         post: { select: { slug: true } },
       },
     });
     if (!comment) return { success: false, error: "Comment not found" };
-    if (comment.deletedAt) return { success: false, error: "Comment already deleted" };
 
     const isAuthor = comment.authorId === user.id;
-    const moderator = isModerator(user.role);
-    if (!isAuthor && !moderator) {
+
+    if (!isAuthor) {
+      if (isModerator(user.role)) {
+        return {
+          success: false,
+          error: "Moderators must use moveToTrashComment with a reason",
+        };
+      }
       return { success: false, error: "Forbidden" };
     }
 
-    // Soft-delete in both cases (Comment model has only deletedAt — no admin trace field).
+    // Author path.
+    if (comment.trashedAt) {
+      return { success: false, error: "Content is under moderation" };
+    }
+    if (comment.deletedAt) {
+      return { success: false, error: "Comment already deleted" };
+    }
+
     await prisma.comment.update({
       where: { id },
       data: { deletedAt: new Date() },

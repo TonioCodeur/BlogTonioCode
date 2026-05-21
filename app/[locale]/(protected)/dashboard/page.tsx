@@ -1,7 +1,8 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { FileText, Plus } from "lucide-react";
+import { FileText, Plus, ShieldAlert } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getI18n, getCurrentLocale } from "@/locales/server";
@@ -17,9 +18,12 @@ export default async function DashboardPage() {
     redirect("/signin");
   }
 
-  const posts = await prisma.post
+  const ownPosts = await prisma.post
     .findMany({
-      where: { authorId: session.user.id },
+      // Author dashboard: hide content the author themselves soft-deleted
+      // (spec §2.4). TRASHED posts remain visible so the UI can list them
+      // under a dedicated "Modéré" section.
+      where: { authorId: session.user.id, deletedAt: null },
       orderBy: [{ updatedAt: "desc" }],
       include: {
         author: { select: { name: true, image: true } },
@@ -27,6 +31,9 @@ export default async function DashboardPage() {
       },
     })
     .catch(() => []);
+
+  const posts = ownPosts.filter((p) => !p.trashedAt);
+  const moderatedPosts = ownPosts.filter((p) => !!p.trashedAt);
 
   return (
     <div className="container mx-auto px-4 py-12 sm:py-16">
@@ -70,6 +77,39 @@ export default async function DashboardPage() {
           ))}
         </div>
       )}
+
+      {moderatedPosts.length > 0 ? (
+        <section className="mt-16">
+          <header className="mb-4 flex items-center gap-2">
+            <ShieldAlert className="h-5 w-5 text-amber-500" />
+            <h2 className="font-mono text-2xl font-bold tracking-tight">
+              {t("trash.authorView.moderated")}
+            </h2>
+            <Badge variant="outline" className="ml-1">
+              {moderatedPosts.length}
+            </Badge>
+          </header>
+          <ul className="space-y-3">
+            {moderatedPosts.map((post) => (
+              <li
+                key={post.id}
+                className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4"
+              >
+                <div className="flex flex-col gap-1">
+                  <span className="font-medium">{post.title}</span>
+                  {post.trashReason ? (
+                    <span className="text-sm text-muted-foreground">
+                      {t("trash.authorView.moderatedReason", {
+                        reason: post.trashReason,
+                      })}
+                    </span>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 }

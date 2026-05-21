@@ -23,24 +23,41 @@ export default async function HomePage() {
   const [posts, categories, postsCount, authorsCount, commentsCount] = await Promise.all([
     prisma.post
       .findMany({
-        where: { published: true },
+        // Exclude posts moderated to trash or soft-deleted by their author.
+        where: { published: true, trashedAt: null, deletedAt: null },
         orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
         take: 7,
         include: {
           author: { select: { name: true, image: true } },
-          category: { select: { name: true, slug: true, color: true } },
+          category: {
+            select: { name: true, slug: true, color: true },
+          },
         },
       })
       .catch(() => []),
     prisma.category
       .findMany({
         orderBy: { name: "asc" },
-        include: { _count: { select: { posts: true } } },
+        include: {
+          _count: {
+            select: {
+              posts: { where: { trashedAt: null, deletedAt: null, published: true } },
+            },
+          },
+        },
       })
       .catch(() => []),
-    prisma.post.count({ where: { published: true } }).catch(() => 0),
-    prisma.user.count({ where: { posts: { some: { published: true } } } }).catch(() => 0),
-    prisma.comment.count({ where: { deletedAt: null } }).catch(() => 0),
+    prisma.post
+      .count({ where: { published: true, trashedAt: null, deletedAt: null } })
+      .catch(() => 0),
+    prisma.user
+      .count({
+        where: {
+          posts: { some: { published: true, trashedAt: null, deletedAt: null } },
+        },
+      })
+      .catch(() => 0),
+    prisma.comment.count({ where: { deletedAt: null, trashedAt: null } }).catch(() => 0),
   ]);
 
   const featured = posts[0];

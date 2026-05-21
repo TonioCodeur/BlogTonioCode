@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, User, Settings, ShieldAlert, MessageSquare, Bot } from "lucide-react";
+import { LayoutDashboard, User, Settings, ShieldAlert, MessageSquare, Bot, Trash2 } from "lucide-react";
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -29,6 +29,8 @@ export function SidebarNav() {
   const { data: session } = useSession() as { data: SidebarSession | null };
   const role = session?.user?.role;
   const isAdmin = role === "ADMIN" || role === "SUPER_ADMIN";
+  const isModeratorOrAbove =
+    role === "MODERATOR" || role === "ADMIN" || role === "SUPER_ADMIN";
 
   type NavItem = {
     href: string;
@@ -70,6 +72,15 @@ export function SidebarNav() {
             href: "/admin/bots",
             label: t("sidebar.nav.adminBots"),
             icon: Bot,
+          },
+        ]
+      : []),
+    ...(isModeratorOrAbove
+      ? [
+          {
+            href: "/admin/trash",
+            label: t("sidebar.nav.adminTrash"),
+            icon: Trash2,
           },
         ]
       : []),

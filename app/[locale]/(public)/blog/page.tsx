@@ -9,7 +9,8 @@ export default async function BlogIndexPage() {
 
   const posts = await prisma.post
     .findMany({
-      where: { published: true },
+      // Exclude posts moderated to trash or soft-deleted by their author.
+      where: { published: true, trashedAt: null, deletedAt: null },
       orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
       include: {
         author: { select: { name: true, image: true } },

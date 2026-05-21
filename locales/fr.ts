@@ -577,4 +577,85 @@ export default {
   'blog.actions.deletePost.confirmDescription': 'Cet post et tous ses commentaires seront définitivement supprimés.',
   'blog.actions.deleteCategory.confirmTitle': 'Supprimer cette catégorie ?',
   'blog.actions.deleteCategory.confirmDescription': 'Cette catégorie sera définitivement supprimée. Les catégories contenant des posts ne peuvent pas être supprimées.',
+
+  // Corbeille — page & partagé
+  'trash.title': 'Corbeille',
+  'trash.description': 'Contenus envoyés en corbeille par la modération. {count} élément(s).',
+  'trash.tabs.posts': 'Posts',
+  'trash.tabs.comments': 'Commentaires',
+  'trash.empty.posts': 'Aucun post en corbeille.',
+  'trash.empty.comments': 'Aucun commentaire en corbeille.',
+  'trash.readOnly': 'Lecture seule — seul un ADMIN peut restaurer, et seul un SUPER_ADMIN peut supprimer définitivement.',
+
+  // Corbeille — colonnes de table
+  'trash.table.title': 'Titre',
+  'trash.table.content': 'Contenu',
+  'trash.table.post': 'Post',
+  'trash.table.author': 'Auteur',
+  'trash.table.trashedBy': 'Mis en corbeille par',
+  'trash.table.reason': 'Raison',
+  'trash.table.notes': 'Notes internes',
+  'trash.table.date': 'Date',
+  'trash.table.actions': 'Actions',
+  'trash.table.unknownAuthor': 'Utilisateur supprimé',
+  'trash.table.unknownModerator': 'Compte supprimé',
+  'trash.table.viewPost': 'Voir le post',
+
+  // Corbeille — actions
+  'trash.actions.moveToTrash': 'Mettre en corbeille',
+  'trash.actions.restore': 'Restaurer',
+  'trash.actions.hardDelete': 'Supprimer définitivement',
+  'trash.actions.emptyTrash': 'Vider la corbeille',
+  'trash.actions.cancel': 'Annuler',
+
+  // Corbeille — dialogs de confirmation
+  'trash.confirm.moveToTrash.title': 'Mettre en corbeille ?',
+  'trash.confirm.moveToTrash.description': 'Ce contenu sera masqué du public. L\'auteur sera informé qu\'il a été modéré.',
+  'trash.confirm.moveToTrash.submit': 'Mettre en corbeille',
+  'trash.confirm.moveToTrash.submitting': 'Envoi...',
+
+  'trash.confirm.restore.title': 'Restaurer ce contenu ?',
+  'trash.confirm.restore.description': 'Le contenu redeviendra visible sur le site.',
+  'trash.confirm.restore.submit': 'Restaurer',
+  'trash.confirm.restore.submitting': 'Restauration...',
+
+  'trash.confirm.hardDelete.title': 'Supprimer définitivement ?',
+  'trash.confirm.hardDelete.descriptionPost': 'Ce post et tous ses commentaires seront définitivement supprimés. Cette action est irréversible.',
+  'trash.confirm.hardDelete.descriptionComment': 'Ce commentaire sera définitivement supprimé. Cette action est irréversible.',
+  'trash.confirm.hardDelete.submit': 'Supprimer définitivement',
+  'trash.confirm.hardDelete.submitting': 'Suppression...',
+
+  'trash.confirm.empty.title': 'Vider la corbeille ?',
+  'trash.confirm.empty.description': 'Cela supprimera définitivement tous les éléments de la corbeille. Pour confirmer, tapez {keyword} ci-dessous.',
+  'trash.confirm.empty.olderThan': 'Ne supprimer que les éléments plus anciens que (jours, optionnel)',
+  'trash.confirm.empty.olderThanPlaceholder': 'ex. 30',
+  'trash.confirm.empty.keyword': 'VIDER',
+  'trash.confirm.empty.confirmLabel': 'Tapez {keyword} pour confirmer',
+  'trash.confirm.empty.submit': 'Vider la corbeille',
+  'trash.confirm.empty.submitting': 'Vidage...',
+
+  // Corbeille — champs
+  'trash.fields.reason': 'Raison (visible par l\'auteur)',
+  'trash.fields.reasonPlaceholder': 'Expliquez pourquoi ce contenu est envoyé en corbeille...',
+  'trash.fields.notes': 'Notes internes (admin uniquement, optionnel)',
+  'trash.fields.notesPlaceholder': 'Notes visibles par les admins uniquement...',
+  'trash.fields.reasonRequired': 'Une raison est requise.',
+  'trash.fields.reasonTooLong': 'La raison est trop longue (max 500 caractères).',
+  'trash.fields.notesTooLong': 'Les notes internes sont trop longues (max 2000 caractères).',
+
+  // Corbeille — toasts
+  'trash.toast.moved': 'Contenu envoyé en corbeille',
+  'trash.toast.restored': 'Contenu restauré',
+  'trash.toast.hardDeleted': 'Contenu supprimé définitivement',
+  'trash.toast.emptied': 'Corbeille vidée — {posts} post(s) et {comments} commentaire(s) supprimés',
+  'trash.toast.error': 'Une erreur est survenue. Veuillez réessayer.',
+
+  // Corbeille — placeholders côté auteur / public
+  'trash.authorView.moderated': 'Retiré par la modération',
+  'trash.authorView.moderatedReason': 'Raison : {reason}',
+  'trash.authorView.authorDeleted': 'Contenu supprimé par l\'auteur',
+  'trash.authorView.underModeration': 'Ce contenu est sous modération.',
+
+  // Sidebar — lien corbeille
+  'sidebar.nav.adminTrash': 'Corbeille',
 } as const;

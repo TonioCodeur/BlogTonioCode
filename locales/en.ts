@@ -577,4 +577,85 @@ export default {
   'blog.actions.deletePost.confirmDescription': 'This post and all its comments will be permanently deleted.',
   'blog.actions.deleteCategory.confirmTitle': 'Delete this category?',
   'blog.actions.deleteCategory.confirmDescription': 'This category will be permanently deleted. Categories with posts cannot be deleted.',
+
+  // Trash — page & shared
+  'trash.title': 'Trash',
+  'trash.description': 'Content sent to trash by moderators. {count} item(s).',
+  'trash.tabs.posts': 'Posts',
+  'trash.tabs.comments': 'Comments',
+  'trash.empty.posts': 'No posts in trash.',
+  'trash.empty.comments': 'No comments in trash.',
+  'trash.readOnly': 'Read-only — only ADMIN can restore and only SUPER_ADMIN can delete permanently.',
+
+  // Trash — table columns
+  'trash.table.title': 'Title',
+  'trash.table.content': 'Content',
+  'trash.table.post': 'Post',
+  'trash.table.author': 'Author',
+  'trash.table.trashedBy': 'Trashed by',
+  'trash.table.reason': 'Reason',
+  'trash.table.notes': 'Internal notes',
+  'trash.table.date': 'Date',
+  'trash.table.actions': 'Actions',
+  'trash.table.unknownAuthor': 'Deleted user',
+  'trash.table.unknownModerator': 'Deleted account',
+  'trash.table.viewPost': 'View post',
+
+  // Trash — actions
+  'trash.actions.moveToTrash': 'Move to trash',
+  'trash.actions.restore': 'Restore',
+  'trash.actions.hardDelete': 'Delete permanently',
+  'trash.actions.emptyTrash': 'Empty trash',
+  'trash.actions.cancel': 'Cancel',
+
+  // Trash — confirm dialogs
+  'trash.confirm.moveToTrash.title': 'Move to trash?',
+  'trash.confirm.moveToTrash.description': 'This content will be hidden from the public. The author will be notified that it was moderated.',
+  'trash.confirm.moveToTrash.submit': 'Move to trash',
+  'trash.confirm.moveToTrash.submitting': 'Moving...',
+
+  'trash.confirm.restore.title': 'Restore this content?',
+  'trash.confirm.restore.description': 'The content will be visible again on the site.',
+  'trash.confirm.restore.submit': 'Restore',
+  'trash.confirm.restore.submitting': 'Restoring...',
+
+  'trash.confirm.hardDelete.title': 'Delete permanently?',
+  'trash.confirm.hardDelete.descriptionPost': 'This post and all its comments will be permanently deleted. This action cannot be undone.',
+  'trash.confirm.hardDelete.descriptionComment': 'This comment will be permanently deleted. This action cannot be undone.',
+  'trash.confirm.hardDelete.submit': 'Delete permanently',
+  'trash.confirm.hardDelete.submitting': 'Deleting...',
+
+  'trash.confirm.empty.title': 'Empty the trash?',
+  'trash.confirm.empty.description': 'This will permanently delete all items in the trash. To confirm, type {keyword} below.',
+  'trash.confirm.empty.olderThan': 'Only delete items older than (days, optional)',
+  'trash.confirm.empty.olderThanPlaceholder': 'e.g. 30',
+  'trash.confirm.empty.keyword': 'VIDER',
+  'trash.confirm.empty.confirmLabel': 'Type {keyword} to confirm',
+  'trash.confirm.empty.submit': 'Empty trash',
+  'trash.confirm.empty.submitting': 'Emptying...',
+
+  // Trash — fields
+  'trash.fields.reason': 'Reason (shown to the author)',
+  'trash.fields.reasonPlaceholder': 'Explain why this content is being moved to trash...',
+  'trash.fields.notes': 'Internal notes (admin only, optional)',
+  'trash.fields.notesPlaceholder': 'Notes visible to admins only...',
+  'trash.fields.reasonRequired': 'A reason is required.',
+  'trash.fields.reasonTooLong': 'The reason is too long (max 500 characters).',
+  'trash.fields.notesTooLong': 'Internal notes are too long (max 2000 characters).',
+
+  // Trash — toasts
+  'trash.toast.moved': 'Content moved to trash',
+  'trash.toast.restored': 'Content restored',
+  'trash.toast.hardDeleted': 'Content permanently deleted',
+  'trash.toast.emptied': 'Trash emptied — {posts} post(s) and {comments} comment(s) deleted',
+  'trash.toast.error': 'An error occurred. Please try again.',
+
+  // Trash — author / public view placeholders
+  'trash.authorView.moderated': 'Removed by moderation',
+  'trash.authorView.moderatedReason': 'Reason: {reason}',
+  'trash.authorView.authorDeleted': 'Content deleted by the author',
+  'trash.authorView.underModeration': 'This content is under moderation.',
+
+  // Sidebar — trash link
+  'sidebar.nav.adminTrash': 'Trash',
 } as const;
