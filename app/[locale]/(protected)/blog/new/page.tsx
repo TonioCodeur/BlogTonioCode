@@ -7,6 +7,7 @@ export default async function NewPostPage() {
 
   const categories = await prisma.category
     .findMany({
+      where: { trashedAt: null, deletedAt: null },
       orderBy: { name: "asc" },
       select: { slug: true, name: true },
     })

@@ -44,9 +44,13 @@ export function EmptyTrashDialog() {
         olderThanDays: Number.isFinite(days) ? (days as number) : undefined,
       });
       if (result.success) {
-        const data = result.data ?? { posts: 0, comments: 0 };
+        const data = result.data ?? { posts: 0, comments: 0, categories: 0 };
         toast.success(
-          t("trash.toast.emptied", { posts: data.posts, comments: data.comments }),
+          t("trash.toast.emptied", {
+            posts: data.posts,
+            comments: data.comments,
+            categories: data.categories,
+          }),
         );
         setOpen(false);
         setConfirmInput("");

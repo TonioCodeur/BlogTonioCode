@@ -15,14 +15,17 @@ type PageProps = {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const category = await prisma.category
-    .findUnique({ where: { slug }, select: { name: true, description: true } })
+    .findUnique({
+      where: { slug },
+      select: { name: true, description: true, trashedAt: true, deletedAt: true },
+    })
     .catch(() => null);
 
   const t = await getI18n();
   const locale = await getCurrentLocale();
   const siteName = t("meta.ogSiteName");
 
-  if (!category) {
+  if (!category || category.trashedAt || category.deletedAt) {
     return {
       title: t("blog.post.notFound.title"),
       robots: { index: false, follow: false },
@@ -79,7 +82,7 @@ export default async function CategoryPage({ params }: PageProps) {
     })
     .catch(() => null);
 
-  if (!category) notFound();
+  if (!category || category.trashedAt || category.deletedAt) notFound();
 
   return (
     <div className="container mx-auto px-4 py-12 sm:py-16">

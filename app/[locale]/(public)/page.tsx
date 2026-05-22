@@ -41,6 +41,7 @@ export default async function HomePage() {
       .catch(() => []),
     prisma.category
       .findMany({
+        where: { trashedAt: null, deletedAt: null },
         orderBy: { name: "asc" },
         include: {
           _count: {
@@ -279,7 +280,12 @@ export default async function HomePage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {categories.map((category) => (
-              <CategoryCard key={category.id} category={category} currentUserRole={currentUserRole} />
+              <CategoryCard
+                key={category.id}
+                category={category}
+                currentUserId={currentUserId}
+                currentUserRole={currentUserRole}
+              />
             ))}
           </div>
         </section>

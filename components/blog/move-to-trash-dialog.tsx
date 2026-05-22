@@ -17,7 +17,11 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/locales/client";
-import { moveToTrashPost, moveToTrashComment } from "@/lib/actions/trash";
+import {
+  moveToTrashPost,
+  moveToTrashComment,
+  moveToTrashCategory,
+} from "@/lib/actions/trash";
 
 type ButtonVariant =
   | "default"
@@ -29,7 +33,10 @@ type ButtonVariant =
 type ButtonSize = "default" | "sm" | "lg" | "icon";
 
 type MoveToTrashDialogProps = {
-  target: { kind: "post"; postId: string } | { kind: "comment"; commentId: string };
+  target:
+    | { kind: "post"; postId: string }
+    | { kind: "comment"; commentId: string }
+    | { kind: "category"; categoryId: string };
   /** When true the trigger is just an icon button. Otherwise label + icon. */
   iconOnly?: boolean;
   variant?: ButtonVariant;
@@ -88,11 +95,17 @@ export function MoveToTrashDialog({
               reason: trimmedReason,
               notes: trimmedNotes || undefined,
             })
-          : await moveToTrashComment({
-              commentId: target.commentId,
-              reason: trimmedReason,
-              notes: trimmedNotes || undefined,
-            });
+          : target.kind === "comment"
+            ? await moveToTrashComment({
+                commentId: target.commentId,
+                reason: trimmedReason,
+                notes: trimmedNotes || undefined,
+              })
+            : await moveToTrashCategory({
+                categoryId: target.categoryId,
+                reason: trimmedReason,
+                notes: trimmedNotes || undefined,
+              });
 
       if (result.success) {
         toast.success(t("trash.toast.moved"));

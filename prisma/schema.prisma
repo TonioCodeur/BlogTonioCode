@@ -52,8 +52,10 @@ model User {
   comments         Comment[]         @relation("CommentAuthor")
 
   // Moderation trash (soft-delete by moderator)
-  postsTrashed     Post[]            @relation("PostTrashedBy")
-  commentsTrashed  Comment[]         @relation("CommentTrashedBy")
+  postsTrashed       Post[]            @relation("PostTrashedBy")
+  commentsTrashed    Comment[]         @relation("CommentTrashedBy")
+  categoriesTrashed  Category[]        @relation("CategoryTrashedBy")
+  categoriesCreated  Category[]        @relation("CategoryCreatedBy")
 
   // Likes
   postLikes        PostLike[]        @relation("PostLikesByUser")
@@ -246,10 +248,32 @@ model Category {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Author who created the category. Nullable for categories seeded before
+  // user-facing creation existed (and to keep them if the creator's account
+  // is deleted).
+  createdById String?
+  createdBy   User?    @relation("CategoryCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  // Soft-delete by the creator (analogous to Post.deletedAt).
+  deletedAt   DateTime?
+
+  // Moderation trash — null = not in trash.
+  trashedAt   DateTime?
+  trashedById String?
+  trashedBy   User?     @relation("CategoryTrashedBy", fields: [trashedById], references: [id], onDelete: SetNull)
+  // Reason shown to the author (max 500 chars enforced in actions).
+  trashReason String?
+  // Internal admin notes (max 2000 chars enforced in actions); never exposed to the author.
+  trashNotes  String?
+
   posts       Post[]    @relation("PostCategory")
 
   @@unique([slug])
   @@unique([name])
+  @@index([createdById])
+  @@index([trashedAt])
+  @@index([trashedById])
+  @@index([deletedAt])
   @@map("category")
 }
 

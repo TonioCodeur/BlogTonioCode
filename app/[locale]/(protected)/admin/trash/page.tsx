@@ -2,13 +2,18 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { listTrashedPosts, listTrashedComments } from "@/lib/actions/trash";
+import {
+  listTrashedPosts,
+  listTrashedComments,
+  listTrashedCategories,
+} from "@/lib/actions/trash";
 import { getCurrentLocale } from "@/locales/server";
 import {
   TrashTables,
   type TrashRole,
   type TrashedPostRow,
   type TrashedCommentRow,
+  type TrashedCategoryRow,
 } from "@/app/[locale]/(protected)/admin/trash/trash-tables";
 
 const TRASH_ROLES = ["MODERATOR", "ADMIN", "SUPER_ADMIN"] as const;
@@ -35,9 +40,10 @@ export default async function AdminTrashPage() {
   const locale = await getCurrentLocale();
 
   // Server actions return ActionResult — degrade gracefully to empty lists.
-  const [postsResult, commentsResult] = await Promise.all([
+  const [postsResult, commentsResult, categoriesResult] = await Promise.all([
     listTrashedPosts({ pageSize: 100 }),
     listTrashedComments({ pageSize: 100 }),
+    listTrashedCategories({ pageSize: 100 }),
   ]);
 
   const posts: TrashedPostRow[] = postsResult.success
@@ -46,12 +52,16 @@ export default async function AdminTrashPage() {
   const comments: TrashedCommentRow[] = commentsResult.success
     ? commentsResult.data?.items ?? []
     : [];
+  const categories: TrashedCategoryRow[] = categoriesResult.success
+    ? categoriesResult.data?.items ?? []
+    : [];
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <TrashTables
         posts={posts}
         comments={comments}
+        categories={categories}
         currentUserRole={role}
         locale={locale}
       />

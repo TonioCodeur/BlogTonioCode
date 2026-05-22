@@ -1,9 +1,12 @@
+import Link from "next/link";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
+import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getI18n, getCurrentLocale } from "@/locales/server";
 import { CategoryCard } from "@/components/blog/category-card";
+import { Button } from "@/components/ui/button";
 import { getSiteUrl, localeAlternates } from "@/lib/seo";
 
 type Role = "USER" | "CUSTOMER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
@@ -36,12 +39,17 @@ export default async function CategoriesIndexPage() {
   const session = await auth.api
     .getSession({ headers: await headers() })
     .catch(() => null);
+  const currentUserId = session?.user?.id ?? null;
   const currentUserRole = (session?.user
     ? ((session.user as { role?: string }).role as Role | undefined) ?? null
     : null) as Role | null;
+  const currentUserEmailVerified = !!(session?.user as
+    | { emailVerified?: boolean }
+    | undefined)?.emailVerified;
 
   const categories = await prisma.category
     .findMany({
+      where: { trashedAt: null, deletedAt: null },
       orderBy: { name: "asc" },
       include: {
         _count: {
@@ -54,13 +62,25 @@ export default async function CategoriesIndexPage() {
     })
     .catch(() => []);
 
+  const canCreate = !!currentUserId && currentUserEmailVerified;
+
   return (
     <div className="container mx-auto px-4 py-12 sm:py-16">
-      <header className="mb-10 max-w-2xl">
-        <h1 className="font-mono text-4xl font-bold tracking-tight sm:text-5xl">
-          {t("blog.categories.title")}
-        </h1>
-        <p className="mt-3 text-lg text-muted-foreground">{t("blog.categories.subtitle")}</p>
+      <header className="mb-10 flex flex-wrap items-start justify-between gap-4">
+        <div className="max-w-2xl">
+          <h1 className="font-mono text-4xl font-bold tracking-tight sm:text-5xl">
+            {t("blog.categories.title")}
+          </h1>
+          <p className="mt-3 text-lg text-muted-foreground">{t("blog.categories.subtitle")}</p>
+        </div>
+        {canCreate ? (
+          <Button asChild>
+            <Link href="/categories/new">
+              <Plus className="mr-2 h-4 w-4" />
+              {t("blog.categories.newCategory")}
+            </Link>
+          </Button>
+        ) : null}
       </header>
 
       {categories.length === 0 ? (
@@ -73,6 +93,7 @@ export default async function CategoriesIndexPage() {
             <CategoryCard
               key={category.id}
               category={category}
+              currentUserId={currentUserId}
               currentUserRole={currentUserRole}
             />
           ))}

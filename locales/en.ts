@@ -20,6 +20,7 @@ export default {
   'blog.latest.viewAll': 'View all posts',
   'blog.categories.title': 'Categories',
   'blog.categories.subtitle': 'Find what interests you',
+  'blog.categories.newCategory': 'New category',
   'blog.empty.title': 'No posts yet',
   'blog.empty.description': 'Check back soon — posts are on the way.',
   'blog.post.readMore': 'Read more',
@@ -648,8 +649,10 @@ export default {
   'trash.description': 'Content sent to trash by moderators. {count} item(s).',
   'trash.tabs.posts': 'Posts',
   'trash.tabs.comments': 'Comments',
+  'trash.tabs.categories': 'Categories',
   'trash.empty.posts': 'No posts in trash.',
   'trash.empty.comments': 'No comments in trash.',
+  'trash.empty.categories': 'No categories in trash.',
   'trash.readOnly': 'Read-only — only ADMIN can restore and only SUPER_ADMIN can delete permanently.',
 
   // Trash — table columns
@@ -665,6 +668,9 @@ export default {
   'trash.table.unknownAuthor': 'Deleted user',
   'trash.table.unknownModerator': 'Deleted account',
   'trash.table.viewPost': 'View post',
+  'trash.table.name': 'Name',
+  'trash.table.createdBy': 'Created by',
+  'trash.table.posts': 'Posts',
 
   // Trash — actions
   'trash.actions.moveToTrash': 'Move to trash',
@@ -687,6 +693,7 @@ export default {
   'trash.confirm.hardDelete.title': 'Delete permanently?',
   'trash.confirm.hardDelete.descriptionPost': 'This post and all its comments will be permanently deleted. This action cannot be undone.',
   'trash.confirm.hardDelete.descriptionComment': 'This comment will be permanently deleted. This action cannot be undone.',
+  'trash.confirm.hardDelete.descriptionCategory': 'This category will be permanently deleted. The category must have no remaining posts.',
   'trash.confirm.hardDelete.submit': 'Delete permanently',
   'trash.confirm.hardDelete.submitting': 'Deleting...',
 
@@ -712,7 +719,7 @@ export default {
   'trash.toast.moved': 'Content moved to trash',
   'trash.toast.restored': 'Content restored',
   'trash.toast.hardDeleted': 'Content permanently deleted',
-  'trash.toast.emptied': 'Trash emptied — {posts} post(s) and {comments} comment(s) deleted',
+  'trash.toast.emptied': 'Trash emptied — {posts} post(s), {comments} comment(s) and {categories} category(ies) deleted',
   'trash.toast.error': 'An error occurred. Please try again.',
 
   // Trash — author / public view placeholders

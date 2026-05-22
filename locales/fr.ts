@@ -20,6 +20,7 @@ export default {
   'blog.latest.viewAll': 'Voir tous les posts',
   'blog.categories.title': 'Catégories',
   'blog.categories.subtitle': 'Trouvez ce qui vous intéresse',
+  'blog.categories.newCategory': 'Nouvelle catégorie',
   'blog.empty.title': 'Aucun post pour le moment',
   'blog.empty.description': 'Revenez bientôt — les posts arrivent.',
   'blog.post.readMore': 'Lire la suite',
@@ -648,8 +649,10 @@ export default {
   'trash.description': 'Contenus envoyés en corbeille par la modération. {count} élément(s).',
   'trash.tabs.posts': 'Posts',
   'trash.tabs.comments': 'Commentaires',
+  'trash.tabs.categories': 'Catégories',
   'trash.empty.posts': 'Aucun post en corbeille.',
   'trash.empty.comments': 'Aucun commentaire en corbeille.',
+  'trash.empty.categories': 'Aucune catégorie en corbeille.',
   'trash.readOnly': 'Lecture seule — seul un ADMIN peut restaurer, et seul un SUPER_ADMIN peut supprimer définitivement.',
 
   // Corbeille — colonnes de table
@@ -665,6 +668,9 @@ export default {
   'trash.table.unknownAuthor': 'Utilisateur supprimé',
   'trash.table.unknownModerator': 'Compte supprimé',
   'trash.table.viewPost': 'Voir le post',
+  'trash.table.name': 'Nom',
+  'trash.table.createdBy': 'Créé par',
+  'trash.table.posts': 'Posts',
 
   // Corbeille — actions
   'trash.actions.moveToTrash': 'Mettre en corbeille',
@@ -687,6 +693,7 @@ export default {
   'trash.confirm.hardDelete.title': 'Supprimer définitivement ?',
   'trash.confirm.hardDelete.descriptionPost': 'Ce post et tous ses commentaires seront définitivement supprimés. Cette action est irréversible.',
   'trash.confirm.hardDelete.descriptionComment': 'Ce commentaire sera définitivement supprimé. Cette action est irréversible.',
+  'trash.confirm.hardDelete.descriptionCategory': 'Cette catégorie sera définitivement supprimée. La catégorie ne doit plus contenir aucun post.',
   'trash.confirm.hardDelete.submit': 'Supprimer définitivement',
   'trash.confirm.hardDelete.submitting': 'Suppression...',
 
@@ -712,7 +719,7 @@ export default {
   'trash.toast.moved': 'Contenu envoyé en corbeille',
   'trash.toast.restored': 'Contenu restauré',
   'trash.toast.hardDeleted': 'Contenu supprimé définitivement',
-  'trash.toast.emptied': 'Corbeille vidée — {posts} post(s) et {comments} commentaire(s) supprimés',
+  'trash.toast.emptied': 'Corbeille vidée — {posts} post(s), {comments} commentaire(s) et {categories} catégorie(s) supprimés',
   'trash.toast.error': 'Une erreur est survenue. Veuillez réessayer.',
 
   // Corbeille — placeholders côté auteur / public

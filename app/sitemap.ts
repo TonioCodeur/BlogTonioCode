@@ -55,6 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .catch(() => []),
     prisma.category
       .findMany({
+        where: { trashedAt: null, deletedAt: null },
         select: { slug: true, updatedAt: true },
         take: 1000,
       })

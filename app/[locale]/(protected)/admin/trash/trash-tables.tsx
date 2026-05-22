@@ -44,6 +44,8 @@ import {
   restoreComment,
   hardDeletePost,
   hardDeleteComment,
+  restoreCategory,
+  hardDeleteCategory,
 } from "@/lib/actions/trash";
 import { EmptyTrashDialog } from "@/app/[locale]/(protected)/admin/trash/empty-trash-dialog";
 
@@ -73,9 +75,22 @@ export type TrashedCommentRow = {
   trashNotes: string | null;
 };
 
+export type TrashedCategoryRow = {
+  id: string;
+  name: string;
+  slug: string;
+  createdByName: string | null;
+  trashedAt: Date;
+  trashedBy: { name: string } | null;
+  trashReason: string;
+  trashNotes: string | null;
+  postCount: number;
+};
+
 type TrashTablesProps = {
   posts: TrashedPostRow[];
   comments: TrashedCommentRow[];
+  categories: TrashedCategoryRow[];
   currentUserRole: TrashRole;
   locale: string;
 };
@@ -98,6 +113,7 @@ function truncate(s: string, n: number): string {
 export function TrashTables({
   posts,
   comments,
+  categories,
   currentUserRole,
   locale,
 }: TrashTablesProps) {
@@ -114,13 +130,15 @@ export function TrashTables({
 
   // ─── Handlers ────────────────────────────────────────────────────────────
 
-  function handleRestore(kind: "post" | "comment", id: string) {
+  function handleRestore(kind: "post" | "comment" | "category", id: string) {
     setBusyId(id);
     startTransition(async () => {
       const result =
         kind === "post"
           ? await restorePost({ postId: id })
-          : await restoreComment({ commentId: id });
+          : kind === "comment"
+            ? await restoreComment({ commentId: id })
+            : await restoreCategory({ categoryId: id });
       if (result.success) {
         toast.success(t("trash.toast.restored"));
         router.refresh();
@@ -131,13 +149,15 @@ export function TrashTables({
     });
   }
 
-  function handleHardDelete(kind: "post" | "comment", id: string) {
+  function handleHardDelete(kind: "post" | "comment" | "category", id: string) {
     setBusyId(id);
     startTransition(async () => {
       const result =
         kind === "post"
           ? await hardDeletePost({ postId: id })
-          : await hardDeleteComment({ commentId: id });
+          : kind === "comment"
+            ? await hardDeleteComment({ commentId: id })
+            : await hardDeleteCategory({ categoryId: id });
       if (result.success) {
         toast.success(t("trash.toast.hardDeleted"));
         router.refresh();
@@ -148,7 +168,7 @@ export function TrashTables({
     });
   }
 
-  const totalCount = posts.length + comments.length;
+  const totalCount = posts.length + comments.length + categories.length;
 
   return (
     <div className="space-y-6">
@@ -181,6 +201,12 @@ export function TrashTables({
             {t("trash.tabs.comments")}{" "}
             <Badge variant="outline" className="ml-2">
               {comments.length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="categories">
+            {t("trash.tabs.categories")}{" "}
+            <Badge variant="outline" className="ml-2">
+              {categories.length}
             </Badge>
           </TabsTrigger>
         </TabsList>
@@ -364,6 +390,83 @@ export function TrashTables({
             </div>
           )}
         </TabsContent>
+
+        {/* ─── Categories tab ────────────────────────────────────────────── */}
+        <TabsContent value="categories">
+          {categories.length === 0 ? (
+            <div className="rounded-xl border border-dashed p-12 text-center text-sm text-muted-foreground">
+              {t("trash.empty.categories")}
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("trash.table.name")}</TableHead>
+                    <TableHead>{t("trash.table.createdBy")}</TableHead>
+                    <TableHead>{t("trash.table.trashedBy")}</TableHead>
+                    <TableHead>{t("trash.table.posts")}</TableHead>
+                    <TableHead>{t("trash.table.reason")}</TableHead>
+                    <TableHead>{t("trash.table.date")}</TableHead>
+                    <TableHead className="w-32 text-right">
+                      {t("trash.table.actions")}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {categories.map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell className="font-medium">
+                        <span className="line-clamp-1">{row.name}</span>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {row.createdByName ?? t("trash.table.unknownAuthor")}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {row.trashedBy?.name ?? t("trash.table.unknownModerator")}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {row.postCount}
+                      </TableCell>
+                      <TableCell className="max-w-[260px] text-sm">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="line-clamp-2">{row.trashReason}</span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-sm whitespace-pre-wrap">
+                              <p className="text-xs">{row.trashReason}</p>
+                              {row.trashNotes && isAdmin ? (
+                                <p className="mt-2 text-xs italic text-muted-foreground">
+                                  {t("trash.table.notes")}: {row.trashNotes}
+                                </p>
+                              ) : null}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {formatDate(row.trashedAt, locale)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <RowActions
+                          kind="category"
+                          id={row.id}
+                          label={row.name}
+                          isAdmin={isAdmin}
+                          canHardDelete={canHardDelete}
+                          busy={isPending && busyId === row.id}
+                          onRestore={() => handleRestore("category", row.id)}
+                          onHardDelete={() => handleHardDelete("category", row.id)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -372,7 +475,7 @@ export function TrashTables({
 // ─── Row actions (Restore / Hard delete) ─────────────────────────────────────
 
 type RowActionsProps = {
-  kind: "post" | "comment";
+  kind: "post" | "comment" | "category";
   id: string;
   label: string;
   isAdmin: boolean;
@@ -435,7 +538,9 @@ function RowActions({
               <AlertDialogDescription>
                 {kind === "post"
                   ? t("trash.confirm.hardDelete.descriptionPost")
-                  : t("trash.confirm.hardDelete.descriptionComment")}
+                  : kind === "comment"
+                    ? t("trash.confirm.hardDelete.descriptionComment")
+                    : t("trash.confirm.hardDelete.descriptionCategory")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

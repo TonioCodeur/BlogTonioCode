@@ -24,6 +24,14 @@ const mocks = vi.hoisted(() => ({
       count: vi.fn(),
       deleteMany: vi.fn(),
     },
+    category: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      findMany: vi.fn(),
+      count: vi.fn(),
+      deleteMany: vi.fn(),
+    },
   },
 }));
 
@@ -383,11 +391,12 @@ describe("emptyTrash", () => {
     mockCaller("SUPER_ADMIN");
     mocks.prisma.comment.deleteMany.mockResolvedValueOnce({ count: 3 });
     mocks.prisma.post.deleteMany.mockResolvedValueOnce({ count: 2 });
+    mocks.prisma.category.deleteMany.mockResolvedValueOnce({ count: 1 });
 
     const result = await emptyTrash({ confirm: "VIDER" });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data).toEqual({ posts: 2, comments: 3 });
+      expect(result.data).toEqual({ posts: 2, comments: 3, categories: 1 });
     }
     // First call: all trashed.
     const [postArgs] = mocks.prisma.post.deleteMany.mock.calls[0];
@@ -398,6 +407,7 @@ describe("emptyTrash", () => {
     mockCaller("SUPER_ADMIN");
     mocks.prisma.comment.deleteMany.mockResolvedValueOnce({ count: 0 });
     mocks.prisma.post.deleteMany.mockResolvedValueOnce({ count: 0 });
+    mocks.prisma.category.deleteMany.mockResolvedValueOnce({ count: 0 });
 
     const before = Date.now();
     const result = await emptyTrash({ confirm: "VIDER", olderThanDays: 30 });

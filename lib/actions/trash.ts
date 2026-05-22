@@ -71,12 +71,14 @@ function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "Unknown error";
 }
 
-function revalidateTrashPaths(postSlug?: string): void {
+function revalidateTrashPaths(postSlug?: string, categorySlug?: string): void {
   revalidatePath("/blog");
   revalidatePath("/categories");
   revalidatePath("/dashboard");
   revalidatePath("/admin/trash");
+  revalidatePath("/");
   if (postSlug) revalidatePath(`/blog/${postSlug}`);
+  if (categorySlug) revalidatePath(`/categories/${categorySlug}`);
 }
 
 /**
@@ -114,8 +116,15 @@ const moveToTrashCommentSchema = z.object({
   notes: z.string().trim().max(2000, "Notes too long").optional(),
 });
 
+const moveToTrashCategorySchema = z.object({
+  categoryId: z.string().min(1, "categoryId required"),
+  reason: z.string().trim().min(1, "Reason required").max(500, "Reason too long"),
+  notes: z.string().trim().max(2000, "Notes too long").optional(),
+});
+
 const idOnlyPostSchema = z.object({ postId: z.string().min(1) });
 const idOnlyCommentSchema = z.object({ commentId: z.string().min(1) });
+const idOnlyCategorySchema = z.object({ categoryId: z.string().min(1) });
 
 const emptyTrashSchema = z.object({
   confirm: z.literal("VIDER"),
@@ -346,7 +355,7 @@ export async function hardDeleteComment(
 
 export async function emptyTrash(
   input: z.infer<typeof emptyTrashSchema>,
-): Promise<ActionResult<{ posts: number; comments: number }>> {
+): Promise<ActionResult<{ posts: number; comments: number; categories: number }>> {
   try {
     const caller = await requireSuperAdminRole();
     const { olderThanDays } = emptyTrashSchema.parse(input);
@@ -368,16 +377,27 @@ export async function emptyTrash(
     const trashedPosts = await prisma.post.deleteMany({
       where: baseWhere,
     });
+    // Categories with posts cannot be hard-deleted (onDelete: Restrict on
+    // Post.categorySlug). emptyTrash only wipes categories whose remaining
+    // posts have all been deleted above.
+    const trashedCategories = await prisma.category.deleteMany({
+      where: { ...baseWhere, posts: { none: {} } },
+    });
 
     logModerationAction("emptyTrash", caller, {
       olderThanDays: olderThanDays ?? null,
       posts: trashedPosts.count,
       comments: trashedComments.count,
+      categories: trashedCategories.count,
     });
     revalidateTrashPaths();
     return {
       success: true,
-      data: { posts: trashedPosts.count, comments: trashedComments.count },
+      data: {
+        posts: trashedPosts.count,
+        comments: trashedComments.count,
+        categories: trashedCategories.count,
+      },
     };
   } catch (err) {
     return { success: false, error: errorMessage(err) };
@@ -503,6 +523,204 @@ export async function listTrashedComments(
       trashedBy: c.trashedBy ? { name: c.trashedBy.name } : null,
       trashReason: c.trashReason ?? "",
       trashNotes: exposeNotes ? c.trashNotes ?? null : null,
+    }));
+
+    return { success: true, data: { items, total } };
+  } catch (err) {
+    return { success: false, error: errorMessage(err) };
+  }
+}
+
+// ─── moveToTrashCategory ─────────────────────────────────────────────────────
+
+export async function moveToTrashCategory(
+  input: z.infer<typeof moveToTrashCategorySchema>,
+): Promise<ActionResult> {
+  try {
+    const caller = await requireModeratorRole();
+    const { categoryId, reason, notes } = moveToTrashCategorySchema.parse(input);
+
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+      select: {
+        id: true,
+        slug: true,
+        trashedAt: true,
+        _count: {
+          select: {
+            posts: { where: { trashedAt: null, deletedAt: null } },
+          },
+        },
+      },
+    });
+    if (!category) return { success: false, error: "Category not found" };
+    if (category.trashedAt) return { success: false, error: "Already in trash" };
+    if (category._count.posts > 0) {
+      return {
+        success: false,
+        error: "Cannot trash a category that has visible posts",
+      };
+    }
+
+    await prisma.category.update({
+      where: { id: categoryId },
+      data: {
+        trashedAt: new Date(),
+        trashedById: caller.id,
+        trashReason: reason,
+        trashNotes: notes ?? null,
+      },
+    });
+
+    logModerationAction("moveToTrashCategory", caller, {
+      categoryId,
+      slug: category.slug,
+    });
+    revalidateTrashPaths(undefined, category.slug);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: errorMessage(err) };
+  }
+}
+
+// ─── restoreCategory ─────────────────────────────────────────────────────────
+
+export async function restoreCategory(
+  input: z.infer<typeof idOnlyCategorySchema>,
+): Promise<ActionResult> {
+  try {
+    const caller = await requireAdminRole();
+    const { categoryId } = idOnlyCategorySchema.parse(input);
+
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+      select: { id: true, slug: true, trashedAt: true },
+    });
+    if (!category) return { success: false, error: "Category not found" };
+    if (!category.trashedAt) return { success: false, error: "Not in trash" };
+
+    await prisma.category.update({
+      where: { id: categoryId },
+      data: {
+        trashedAt: null,
+        trashedById: null,
+        trashReason: null,
+        trashNotes: null,
+      },
+    });
+
+    logModerationAction("restoreCategory", caller, {
+      categoryId,
+      slug: category.slug,
+    });
+    revalidateTrashPaths(undefined, category.slug);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: errorMessage(err) };
+  }
+}
+
+// ─── hardDeleteCategory ──────────────────────────────────────────────────────
+
+export async function hardDeleteCategory(
+  input: z.infer<typeof idOnlyCategorySchema>,
+): Promise<ActionResult> {
+  try {
+    const caller = await requireAdminRole();
+    const { categoryId } = idOnlyCategorySchema.parse(input);
+
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+      select: {
+        id: true,
+        slug: true,
+        trashedAt: true,
+        _count: { select: { posts: true } },
+      },
+    });
+    if (!category) return { success: false, error: "Category not found" };
+    if (!category.trashedAt) {
+      return {
+        success: false,
+        error: "Category must be in trash before hard delete",
+      };
+    }
+    if (category._count.posts > 0) {
+      return {
+        success: false,
+        error: "Cannot hard delete a category that still references posts",
+      };
+    }
+
+    await prisma.category.delete({ where: { id: categoryId } });
+
+    logModerationAction("hardDeleteCategory", caller, {
+      categoryId,
+      slug: category.slug,
+    });
+    revalidateTrashPaths(undefined, category.slug);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: errorMessage(err) };
+  }
+}
+
+// ─── listTrashedCategories ───────────────────────────────────────────────────
+
+type TrashedCategoryItem = {
+  id: string;
+  name: string;
+  slug: string;
+  createdByName: string | null;
+  trashedAt: Date;
+  trashedBy: { name: string } | null;
+  trashReason: string;
+  trashNotes: string | null;
+  postCount: number;
+};
+
+export async function listTrashedCategories(
+  input?: z.infer<typeof listTrashedSchema>,
+): Promise<ActionResult<{ items: TrashedCategoryItem[]; total: number }>> {
+  try {
+    const caller = await requireModeratorRole();
+    const parsed = listTrashedSchema.parse(input);
+    const page = parsed?.page ?? 1;
+    const pageSize = Math.min(parsed?.pageSize ?? 20, 100);
+    const skip = (page - 1) * pageSize;
+
+    const [rows, total] = await Promise.all([
+      prisma.category.findMany({
+        where: { trashedAt: { not: null } },
+        orderBy: { trashedAt: "desc" },
+        skip,
+        take: pageSize,
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          trashedAt: true,
+          trashReason: true,
+          trashNotes: true,
+          createdBy: { select: { name: true } },
+          trashedBy: { select: { name: true } },
+          _count: { select: { posts: true } },
+        },
+      }),
+      prisma.category.count({ where: { trashedAt: { not: null } } }),
+    ]);
+
+    const exposeNotes = isAdminPlus(caller.role);
+    const items: TrashedCategoryItem[] = rows.map((c) => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      createdByName: c.createdBy?.name ?? null,
+      trashedAt: c.trashedAt!,
+      trashedBy: c.trashedBy ? { name: c.trashedBy.name } : null,
+      trashReason: c.trashReason ?? "",
+      trashNotes: exposeNotes ? c.trashNotes ?? null : null,
+      postCount: c._count.posts,
     }));
 
     return { success: true, data: { items, total } };

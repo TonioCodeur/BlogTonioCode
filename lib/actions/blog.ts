@@ -55,14 +55,6 @@ async function requireAuthUser(): Promise<AuthedUser> {
   return { id: dbUser.id, role: dbUser.role as Role, emailVerified: dbUser.emailVerified };
 }
 
-async function requireModerator(): Promise<AuthedUser> {
-  const user = await requireAuthUser();
-  if (!MODERATOR_ROLES.includes(user.role as (typeof MODERATOR_ROLES)[number])) {
-    throw new Error("Forbidden");
-  }
-  return user;
-}
-
 function isModerator(role: Role): boolean {
   return MODERATOR_ROLES.includes(role as (typeof MODERATOR_ROLES)[number]);
 }
@@ -134,9 +126,11 @@ export async function createPost(
 
     const category = await prisma.category.findUnique({
       where: { slug: data.categorySlug },
-      select: { slug: true },
+      select: { slug: true, trashedAt: true, deletedAt: true },
     });
-    if (!category) return { success: false, error: "Category not found" };
+    if (!category || category.trashedAt || category.deletedAt) {
+      return { success: false, error: "Category not found" };
+    }
 
     const baseSlug = data.slug ?? slugify(data.title);
     if (!baseSlug) return { success: false, error: "Could not derive a valid slug from the title" };
@@ -243,6 +237,7 @@ export async function createCategory(
         slug,
         description: data.description ?? null,
         color: data.color ?? null,
+        createdById: user.id,
       },
       select: { id: true, slug: true },
     });
@@ -255,22 +250,68 @@ export async function createCategory(
 }
 
 // ─── deleteCategory ──────────────────────────────────────────────────────────
+//
+// Soft-delete a category by routing through the moderation trash, mirroring
+// the post/comment flows (spec: "quand une catégorie est supprimé elle soit
+// déplacé dans la corbeille").
+//
+//   - Creator of the category: soft-delete (deletedAt = now()). Refused if the
+//                               category already lives in moderation trash.
+//   - MODERATOR+:               must call moveToTrashCategory() from
+//                               `lib/actions/trash.ts` (needs a reason).
+//   - Anyone else:              Forbidden.
+//
+// Categories with published posts cannot be deleted — those posts would lose
+// their required category relation.
 
 export async function deleteCategory(id: string): Promise<ActionResult> {
   try {
     if (!id || typeof id !== "string") return { success: false, error: "Invalid id" };
-    await requireModerator();
+    const user = await requireAuthUser();
 
     const category = await prisma.category.findUnique({
       where: { id },
-      select: { id: true, _count: { select: { posts: true } } },
+      select: {
+        id: true,
+        createdById: true,
+        trashedAt: true,
+        deletedAt: true,
+        _count: {
+          select: {
+            posts: { where: { trashedAt: null, deletedAt: null } },
+          },
+        },
+      },
     });
     if (!category) return { success: false, error: "Category not found" };
+
+    const isCreator = !!category.createdById && category.createdById === user.id;
+
+    if (!isCreator) {
+      if (isModerator(user.role)) {
+        return {
+          success: false,
+          error: "Moderators must use moveToTrashCategory with a reason",
+        };
+      }
+      return { success: false, error: "Forbidden" };
+    }
+
+    if (category.trashedAt) {
+      return { success: false, error: "Content is under moderation" };
+    }
+    if (category.deletedAt) {
+      return { success: false, error: "Category already deleted" };
+    }
     if (category._count.posts > 0) {
       return { success: false, error: "Cannot delete a category that has posts" };
     }
 
-    await prisma.category.delete({ where: { id } });
+    await prisma.category.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
     revalidateBlogPaths();
     return { success: true };
   } catch (err) {

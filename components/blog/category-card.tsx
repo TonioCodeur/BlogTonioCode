@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FolderOpen } from "lucide-react";
 import { CategoryDeleteButton } from "@/components/blog/category-delete-button";
+import { MoveToTrashDialog } from "@/components/blog/move-to-trash-dialog";
 
 type CategoryRole = "USER" | "CUSTOMER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
 const MODERATOR_ROLES: ReadonlyArray<CategoryRole> = [
@@ -16,15 +17,25 @@ type CategoryCardProps = {
     slug: string;
     description: string | null;
     color: string | null;
+    createdById?: string | null;
     _count?: { posts: number };
   };
+  currentUserId?: string | null;
   currentUserRole?: CategoryRole | null;
 };
 
-export function CategoryCard({ category, currentUserRole }: CategoryCardProps) {
+export function CategoryCard({
+  category,
+  currentUserId,
+  currentUserRole,
+}: CategoryCardProps) {
   const count = category._count?.posts ?? 0;
   const isMod =
     !!currentUserRole && MODERATOR_ROLES.includes(currentUserRole);
+  const isCreator =
+    !!currentUserId &&
+    !!category.createdById &&
+    currentUserId === category.createdById;
 
   return (
     <div className="group relative flex items-start gap-4 rounded-xl border bg-card p-5 transition-all hover:border-primary/50 hover:shadow-md">
@@ -56,9 +67,20 @@ export function CategoryCard({ category, currentUserRole }: CategoryCardProps) {
           </p>
         </div>
       </Link>
-      {isMod ? (
+      {/* Author of the category can soft-delete (routes through trash). */}
+      {isCreator ? (
         <div className="absolute right-2 top-2">
           <CategoryDeleteButton categoryId={category.id} />
+        </div>
+      ) : null}
+      {/* Moderators+ get the moderation flow (with reason) when not the author. */}
+      {!isCreator && isMod ? (
+        <div className="absolute right-2 top-2">
+          <MoveToTrashDialog
+            target={{ kind: "category", categoryId: category.id }}
+            iconOnly
+            variant="ghost"
+          />
         </div>
       ) : null}
     </div>
