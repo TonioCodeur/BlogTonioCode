@@ -1,10 +1,35 @@
 import { headers } from "next/headers";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { getI18n } from "@/locales/server";
+import { getI18n, getCurrentLocale } from "@/locales/server";
 import { CategoryCard } from "@/components/blog/category-card";
+import { getSiteUrl, localeAlternates } from "@/lib/seo";
 
 type Role = "USER" | "CUSTOMER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getI18n();
+  const locale = await getCurrentLocale();
+  const title = t("meta.categories.title");
+  const description = t("meta.categories.description");
+  const url = locale === "fr" ? `${getSiteUrl()}/fr/categories` : `${getSiteUrl()}/categories`;
+
+  return {
+    title,
+    description,
+    alternates: localeAlternates("/categories"),
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url,
+      siteName: t("meta.ogSiteName"),
+      locale: locale === "fr" ? "fr_FR" : "en_US",
+    },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 export default async function CategoriesIndexPage() {
   const t = await getI18n();

@@ -182,9 +182,59 @@ export default {
   'theme.system': 'System',
 
   // Metadata
-  'meta.title': 'BlogTonioCode - Ship your SaaS faster',
+  'meta.title': 'BlogTonioCode — Dev blog by devs, for devs',
+  'meta.titleTemplate': '%s · BlogTonioCode',
   'meta.description':
-    'The ultimate Next.js boilerplate for building production-ready SaaS applications in days, not months.',
+    'A developer blog by developers: dev news, AI news, and in-depth educational posts about modern web technologies, frameworks, and tooling.',
+  'meta.keywords':
+    'developer blog, dev news, AI news, web development, JavaScript, TypeScript, React, Next.js, programming tutorials, software engineering',
+  'meta.ogSiteName': 'BlogTonioCode',
+  'meta.blog.title': 'All posts — Dev & AI writing for developers',
+  'meta.blog.description':
+    'Every published post on BlogTonioCode — dev news, AI news, and educational deep dives into modern web technologies.',
+  'meta.categories.title': 'Categories — Browse posts by topic',
+  'meta.categories.description':
+    'Explore BlogTonioCode posts organized by category — JavaScript, TypeScript, frameworks, AI, tooling, and more.',
+  'meta.category.titleTemplate': '{name} — Posts on {site}',
+  'meta.category.descriptionTemplate':
+    'Posts in the {name} category on BlogTonioCode — dev news, AI news, and educational content tagged {name}.',
+
+  // About page
+  'about.meta.title': 'About — A dev blog by devs, for devs',
+  'about.meta.description':
+    'BlogTonioCode is a developer-first blog covering dev news, AI news, and educational deep dives into modern web technologies. Written by working developers.',
+  'about.hero.badge': 'About',
+  'about.hero.title': 'A dev blog by devs, for devs',
+  'about.hero.description':
+    'BlogTonioCode is a journal for working developers. We share dev news, AI breakthroughs, and educational deep dives into the technologies we use every day — written by people who ship code, not marketers.',
+  'about.hero.ctaPosts': 'Read the latest posts',
+  'about.hero.ctaCategories': 'Browse categories',
+  'about.pillars.title': 'What you will find here',
+  'about.pillars.subtitle': 'Three editorial pillars, one mission: help developers ship better software.',
+  'about.pillars.devNews.title': 'Dev news',
+  'about.pillars.devNews.description':
+    'Releases, RFCs, breaking changes, and trends from the front lines of web development — explained without hype.',
+  'about.pillars.aiNews.title': 'AI news',
+  'about.pillars.aiNews.description':
+    'New models, tooling, and developer-facing announcements from the AI ecosystem, with practical takeaways for engineers.',
+  'about.pillars.education.title': 'Educational posts',
+  'about.pillars.education.description':
+    'Deep dives, tutorials, and hands-on guides about languages, frameworks, and tooling — written to make you a better engineer.',
+  'about.values.title': 'How we write',
+  'about.values.subtitle': 'Three rules that shape every post we publish.',
+  'about.values.practical.title': 'Practical first',
+  'about.values.practical.description':
+    'Every post answers a real question a developer might ask. No filler, no rewritten changelogs.',
+  'about.values.honest.title': 'Honest opinions',
+  'about.values.honest.description':
+    'We share what we actually use and why. When something is overhyped or broken, we say so.',
+  'about.values.openSource.title': 'Open by default',
+  'about.values.openSource.description':
+    'Code examples are reproducible, sources are linked, and we credit the community whose work makes ours possible.',
+  'about.cta.title': 'Start reading',
+  'about.cta.description': 'Browse the latest posts or jump into a category that interests you.',
+  'about.cta.readPosts': 'Read posts',
+  'about.cta.browseCategories': 'Browse categories',
 
   // Sidebar
   'sidebar.nav.dashboard': 'Dashboard',

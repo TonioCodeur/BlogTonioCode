@@ -1,10 +1,35 @@
 import { headers } from "next/headers";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getI18n, getCurrentLocale } from "@/locales/server";
 import { PostCard } from "@/components/blog/post-card";
 import { withPostLikeMeta } from "@/lib/blog/likes-include";
 import { Calendar } from "lucide-react";
+import { getSiteUrl, localeAlternates } from "@/lib/seo";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getI18n();
+  const locale = await getCurrentLocale();
+  const title = t("meta.blog.title");
+  const description = t("meta.blog.description");
+  const url = locale === "fr" ? `${getSiteUrl()}/fr/blog` : `${getSiteUrl()}/blog`;
+
+  return {
+    title,
+    description,
+    alternates: localeAlternates("/blog"),
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url,
+      siteName: t("meta.ogSiteName"),
+      locale: locale === "fr" ? "fr_FR" : "en_US",
+    },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 export default async function BlogIndexPage() {
   const t = await getI18n();

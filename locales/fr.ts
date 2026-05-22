@@ -182,9 +182,59 @@ export default {
   'theme.system': 'Système',
 
   // Metadata
-  'meta.title': 'BlogTonioCode - Lancez votre SaaS plus vite',
+  'meta.title': 'BlogTonioCode — Blog dev par des devs, pour des devs',
+  'meta.titleTemplate': '%s · BlogTonioCode',
   'meta.description':
-    'Le boilerplate Next.js ultime pour créer des applications SaaS prêtes pour la production en jours, pas en mois.',
+    'Un blog de développeurs pour développeurs : actualité du dev, actualité de l\'IA et posts éducatifs approfondis sur les technologies web modernes, les frameworks et l\'outillage.',
+  'meta.keywords':
+    'blog développeur, actualité dev, actualité IA, développement web, JavaScript, TypeScript, React, Next.js, tutoriels programmation, ingénierie logicielle',
+  'meta.ogSiteName': 'BlogTonioCode',
+  'meta.blog.title': 'Tous les posts — Articles dev & IA pour développeurs',
+  'meta.blog.description':
+    'Tous les posts publiés sur BlogTonioCode — actualité du dev, actualité de l\'IA et deep dives éducatifs sur les technologies web modernes.',
+  'meta.categories.title': 'Catégories — Parcourir les posts par thème',
+  'meta.categories.description':
+    'Explorez les posts de BlogTonioCode organisés par catégorie — JavaScript, TypeScript, frameworks, IA, outillage et plus.',
+  'meta.category.titleTemplate': '{name} — Posts sur {site}',
+  'meta.category.descriptionTemplate':
+    'Posts dans la catégorie {name} sur BlogTonioCode — actualité du dev, actualité de l\'IA et contenu éducatif tagué {name}.',
+
+  // About page
+  'about.meta.title': 'À propos — Un blog dev par des devs, pour des devs',
+  'about.meta.description':
+    'BlogTonioCode est un blog tourné développeurs qui couvre l\'actualité du dev, l\'actualité de l\'IA et des deep dives éducatifs sur les technologies web modernes. Écrit par des développeurs en activité.',
+  'about.hero.badge': 'À propos',
+  'about.hero.title': 'Un blog dev par des devs, pour des devs',
+  'about.hero.description':
+    'BlogTonioCode est un journal pour développeurs en activité. On y partage l\'actualité du dev, les avancées de l\'IA et des deep dives éducatifs sur les technologies du quotidien — écrit par des gens qui livrent du code, pas par des marketeux.',
+  'about.hero.ctaPosts': 'Lire les derniers posts',
+  'about.hero.ctaCategories': 'Parcourir les catégories',
+  'about.pillars.title': 'Ce que vous trouverez ici',
+  'about.pillars.subtitle': 'Trois piliers éditoriaux, une mission : aider les développeurs à livrer du meilleur logiciel.',
+  'about.pillars.devNews.title': 'Actualité du dev',
+  'about.pillars.devNews.description':
+    'Sorties, RFCs, breaking changes et tendances du développement web — expliqués sans hype.',
+  'about.pillars.aiNews.title': 'Actualité de l\'IA',
+  'about.pillars.aiNews.description':
+    'Nouveaux modèles, outillage et annonces pour développeurs côté écosystème IA, avec des enseignements concrets pour ingénieurs.',
+  'about.pillars.education.title': 'Posts éducatifs',
+  'about.pillars.education.description':
+    'Deep dives, tutoriels et guides pratiques sur les langages, les frameworks et l\'outillage — pour devenir un meilleur ingénieur.',
+  'about.values.title': 'Comment on écrit',
+  'about.values.subtitle': 'Trois règles qui guident chaque post publié.',
+  'about.values.practical.title': 'Pratique avant tout',
+  'about.values.practical.description':
+    'Chaque post répond à une vraie question de développeur. Pas de remplissage, pas de changelog reformulé.',
+  'about.values.honest.title': 'Avis honnêtes',
+  'about.values.honest.description':
+    'On partage ce qu\'on utilise vraiment et pourquoi. Quand un outil est survendu ou cassé, on le dit.',
+  'about.values.openSource.title': 'Ouvert par défaut',
+  'about.values.openSource.description':
+    'Les exemples de code sont reproductibles, les sources liées, et on crédite la communauté open source dont le travail rend le nôtre possible.',
+  'about.cta.title': 'Commencer la lecture',
+  'about.cta.description': 'Parcourez les derniers posts ou plongez dans une catégorie qui vous intéresse.',
+  'about.cta.readPosts': 'Lire les posts',
+  'about.cta.browseCategories': 'Parcourir les catégories',
 
   // Sidebar
   'sidebar.nav.dashboard': 'Tableau de bord',

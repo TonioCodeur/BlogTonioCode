@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,10 +22,77 @@ import {
   withCommentLikeMeta,
   withPostLikeMeta,
 } from "@/lib/blog/likes-include";
+import { absoluteUrl, getSiteUrl, localeAlternates, SITE_DEFAULTS } from "@/lib/seo";
 
 type PageProps = {
   params: Promise<{ slug: string; locale: string }>;
 };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await prisma.post
+    .findUnique({
+      where: { slug },
+      select: {
+        title: true,
+        excerpt: true,
+        coverImage: true,
+        published: true,
+        publishedAt: true,
+        updatedAt: true,
+        trashedAt: true,
+        deletedAt: true,
+        author: { select: { name: true } },
+        category: { select: { name: true } },
+      },
+    })
+    .catch(() => null);
+
+  const t = await getI18n();
+  const locale = await getCurrentLocale();
+  const siteName = t("meta.ogSiteName");
+
+  if (!post || !post.published || post.trashedAt || post.deletedAt) {
+    return {
+      title: t("blog.post.notFound.title"),
+      description: t("blog.post.notFound.description"),
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const path = `/blog/${slug}`;
+  const url = locale === "fr" ? `${getSiteUrl()}/fr${path}` : `${getSiteUrl()}${path}`;
+  const description = (post.excerpt?.trim() || post.title).slice(0, 200);
+  const ogImage = post.coverImage ? [post.coverImage] : undefined;
+  const publishedTime = (post.publishedAt ?? undefined)?.toISOString();
+  const modifiedTime = post.updatedAt?.toISOString();
+
+  return {
+    title: post.title,
+    description,
+    alternates: localeAlternates(path),
+    authors: post.author?.name ? [{ name: post.author.name }] : undefined,
+    openGraph: {
+      type: "article",
+      title: post.title,
+      description,
+      url,
+      siteName,
+      locale: locale === "fr" ? "fr_FR" : "en_US",
+      publishedTime,
+      modifiedTime,
+      authors: post.author?.name ? [post.author.name] : undefined,
+      section: post.category?.name,
+      images: ogImage,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description,
+      images: ogImage,
+    },
+  };
+}
 
 const MODERATOR_ROLES: ReadonlyArray<CommentRole> = [
   "MODERATOR",
@@ -174,8 +242,38 @@ export default async function PostPage({ params }: PageProps) {
   // "move to trash" flow (with reason) — they no longer use the plain delete.
   const canAuthorDelete = isAuthor;
 
+  const siteUrl = getSiteUrl();
+  const postUrl = locale === "fr"
+    ? `${siteUrl}/fr/blog/${post.slug}`
+    : `${siteUrl}/blog/${post.slug}`;
+  const blogPostingJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt ?? undefined,
+    image: post.coverImage ? [absoluteUrl(post.coverImage)] : undefined,
+    datePublished: publishedDate.toISOString(),
+    dateModified: (post.updatedAt ?? publishedDate).toISOString(),
+    author: post.author?.name
+      ? { "@type": "Person", name: post.author.name }
+      : undefined,
+    publisher: {
+      "@type": "Organization",
+      name: SITE_DEFAULTS.name,
+      url: siteUrl,
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": postUrl },
+    articleSection: post.category?.name,
+    inLanguage: locale === "fr" ? "fr-FR" : "en-US",
+    url: postUrl,
+  };
+
   return (
     <article className="container mx-auto max-w-3xl px-4 py-12 sm:py-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingJsonLd) }}
+      />
       <div className="mb-6 flex items-center justify-between">
         <Button variant="ghost" size="sm" asChild className="-ml-3">
           <Link href="/blog">

@@ -8,6 +8,7 @@ import { auth } from "@/lib/auth";
 import { PostCard } from "@/components/blog/post-card";
 import { CategoryCard } from "@/components/blog/category-card";
 import { withPostLikeMeta } from "@/lib/blog/likes-include";
+import { getSiteUrl, SITE_DEFAULTS } from "@/lib/seo";
 
 type Role = "USER" | "CUSTOMER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
 
@@ -66,8 +67,45 @@ export default async function HomePage() {
   const featured = posts[0];
   const rest = posts.slice(1, 7);
 
+  const siteUrl = getSiteUrl();
+  const homeUrl = locale === "fr" ? `${siteUrl}/fr` : siteUrl;
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_DEFAULTS.name,
+    url: siteUrl,
+    inLanguage: locale === "fr" ? "fr-FR" : "en-US",
+    description: t("meta.description"),
+    publisher: {
+      "@type": "Organization",
+      name: SITE_DEFAULTS.name,
+      url: siteUrl,
+    },
+  };
+  const blogJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    name: SITE_DEFAULTS.name,
+    url: homeUrl,
+    inLanguage: locale === "fr" ? "fr-FR" : "en-US",
+    description: t("meta.description"),
+    publisher: {
+      "@type": "Organization",
+      name: SITE_DEFAULTS.name,
+      url: siteUrl,
+    },
+  };
+
   return (
     <div className="relative overflow-hidden bg-dots glow-halo">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }}
+      />
       {/* Hero */}
       <section className="container mx-auto grid gap-7 px-6 py-12 sm:py-16 lg:grid-cols-[1.6fr_1fr] lg:gap-10 lg:px-10">
         <div className="flex flex-col justify-center">
