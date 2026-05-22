@@ -261,19 +261,28 @@ describe("restoreComment", () => {
 // ─── hardDeletePost ───────────────────────────────────────────────────────────
 
 describe("hardDeletePost", () => {
-  it("rejects a MODERATOR (SUPER_ADMIN required)", async () => {
+  it("rejects a MODERATOR (ADMIN+ required)", async () => {
     mockCaller("MODERATOR");
     const result = await hardDeletePost({ postId: POST_ID });
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("Forbidden");
+    expect(mocks.prisma.post.delete).not.toHaveBeenCalled();
   });
 
-  it("rejects an ADMIN (SUPER_ADMIN required)", async () => {
+  it("lets an ADMIN hard-delete a trashed post", async () => {
     mockCaller("ADMIN");
+    mocks.prisma.post.findUnique.mockResolvedValueOnce({
+      id: POST_ID,
+      slug: "my-post",
+      trashedAt: new Date(),
+    });
+    mocks.prisma.post.delete.mockResolvedValueOnce({ id: POST_ID });
+
     const result = await hardDeletePost({ postId: POST_ID });
-    expect(result.success).toBe(false);
-    if (!result.success) expect(result.error).toContain("Forbidden");
-    expect(mocks.prisma.post.delete).not.toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(mocks.prisma.post.delete).toHaveBeenCalledWith({
+      where: { id: POST_ID },
+    });
   });
 
   it("refuses to delete a post that is NOT in trash", async () => {
@@ -310,11 +319,28 @@ describe("hardDeletePost", () => {
 // ─── hardDeleteComment ────────────────────────────────────────────────────────
 
 describe("hardDeleteComment", () => {
-  it("rejects an ADMIN (SUPER_ADMIN required)", async () => {
-    mockCaller("ADMIN");
+  it("rejects a MODERATOR (ADMIN+ required)", async () => {
+    mockCaller("MODERATOR");
     const result = await hardDeleteComment({ commentId: COMMENT_ID });
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("Forbidden");
+    expect(mocks.prisma.comment.delete).not.toHaveBeenCalled();
+  });
+
+  it("lets an ADMIN hard-delete a trashed comment", async () => {
+    mockCaller("ADMIN");
+    mocks.prisma.comment.findUnique.mockResolvedValueOnce({
+      id: COMMENT_ID,
+      trashedAt: new Date(),
+      post: { slug: "my-post" },
+    });
+    mocks.prisma.comment.delete.mockResolvedValueOnce({ id: COMMENT_ID });
+
+    const result = await hardDeleteComment({ commentId: COMMENT_ID });
+    expect(result.success).toBe(true);
+    expect(mocks.prisma.comment.delete).toHaveBeenCalledWith({
+      where: { id: COMMENT_ID },
+    });
   });
 
   it("hard-deletes a trashed comment on SUPER_ADMIN happy path", async () => {

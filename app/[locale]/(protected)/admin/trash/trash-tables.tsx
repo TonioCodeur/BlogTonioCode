@@ -108,6 +108,9 @@ export function TrashTables({
 
   const isAdmin = currentUserRole === "ADMIN" || currentUserRole === "SUPER_ADMIN";
   const isSuperAdmin = currentUserRole === "SUPER_ADMIN";
+  // Hard-delete is now ADMIN+; empty-trash stays SUPER_ADMIN-only.
+  const canHardDelete = isAdmin;
+  const canEmptyTrash = isSuperAdmin;
 
   // ─── Handlers ────────────────────────────────────────────────────────────
 
@@ -163,7 +166,7 @@ export function TrashTables({
             </p>
           ) : null}
         </div>
-        {isSuperAdmin ? <EmptyTrashDialog /> : null}
+        {canEmptyTrash ? <EmptyTrashDialog /> : null}
       </header>
 
       <Tabs defaultValue="posts" className="space-y-4">
@@ -253,7 +256,7 @@ export function TrashTables({
                           id={row.id}
                           label={row.title}
                           isAdmin={isAdmin}
-                          isSuperAdmin={isSuperAdmin}
+                          canHardDelete={canHardDelete}
                           busy={isPending && busyId === row.id}
                           onRestore={() => handleRestore("post", row.id)}
                           onHardDelete={() => handleHardDelete("post", row.id)}
@@ -348,7 +351,7 @@ export function TrashTables({
                           id={row.id}
                           label={truncate(row.content, 40)}
                           isAdmin={isAdmin}
-                          isSuperAdmin={isSuperAdmin}
+                          canHardDelete={canHardDelete}
                           busy={isPending && busyId === row.id}
                           onRestore={() => handleRestore("comment", row.id)}
                           onHardDelete={() => handleHardDelete("comment", row.id)}
@@ -373,7 +376,7 @@ type RowActionsProps = {
   id: string;
   label: string;
   isAdmin: boolean;
-  isSuperAdmin: boolean;
+  canHardDelete: boolean;
   busy: boolean;
   onRestore: () => void;
   onHardDelete: () => void;
@@ -382,7 +385,7 @@ type RowActionsProps = {
 function RowActions({
   kind,
   isAdmin,
-  isSuperAdmin,
+  canHardDelete,
   busy,
   onRestore,
   onHardDelete,
@@ -411,7 +414,7 @@ function RowActions({
         </Tooltip>
       </TooltipProvider>
 
-      {isSuperAdmin ? (
+      {canHardDelete ? (
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button

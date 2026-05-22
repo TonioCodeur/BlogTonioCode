@@ -8,40 +8,61 @@ import {
   dispatchBotsOnRoleChanged,
   dispatchBotsOnSanction,
 } from "@/lib/bots/dispatch";
+import type { ActionResult } from "@/lib/actions/blog";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+type Role = "USER" | "CUSTOMER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
+
+const MODERATOR_ROLES = ["MODERATOR", "ADMIN", "SUPER_ADMIN"] as const;
 const ADMIN_ROLES = ["ADMIN", "SUPER_ADMIN"] as const;
 
-async function requireAdmin() {
+type Caller = { userId: string; role: Role };
+
+async function requireAuthed(): Promise<Caller> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) throw new Error("Unauthorized");
 
-  // Fetch role from DB to avoid acting on stale session cache
+  // Fetch role from DB to avoid acting on stale session cache.
   const dbUser = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { role: true },
   });
   if (!dbUser) throw new Error("Unauthorized");
 
-  const role = dbUser.role;
-  if (!ADMIN_ROLES.includes(role as (typeof ADMIN_ROLES)[number])) {
-    throw new Error("Forbidden");
-  }
-
-  return { userId: session.user.id, role };
+  return { userId: session.user.id, role: dbUser.role as Role };
 }
 
-async function requireSuperAdmin() {
+async function requireModerator(): Promise<Caller> {
+  const caller = await requireAuthed();
+  if (!MODERATOR_ROLES.includes(caller.role as (typeof MODERATOR_ROLES)[number])) {
+    throw new Error("Forbidden");
+  }
+  return caller;
+}
+
+async function requireAdmin(): Promise<Caller> {
+  const caller = await requireAuthed();
+  if (!ADMIN_ROLES.includes(caller.role as (typeof ADMIN_ROLES)[number])) {
+    throw new Error("Forbidden");
+  }
+  return caller;
+}
+
+async function requireSuperAdmin(): Promise<Caller> {
   const caller = await requireAdmin();
   if (caller.role !== "SUPER_ADMIN") throw new Error("Forbidden: SUPER_ADMIN required");
   return caller;
 }
 
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : "Unknown error";
+}
+
 // ─── getUsers ─────────────────────────────────────────────────────────────────
 
 export async function getUsers() {
-  await requireAdmin();
+  await requireModerator();
 
   return prisma.user.findMany({
     orderBy: { createdAt: "desc" },
@@ -69,7 +90,7 @@ const getUserSanctionsSchema = z.object({
 });
 
 export async function getUserSanctions(input: z.infer<typeof getUserSanctionsSchema>) {
-  await requireAdmin();
+  await requireModerator();
   const { userId } = getUserSanctionsSchema.parse(input);
 
   return prisma.sanction.findMany({
@@ -92,7 +113,7 @@ const createSanctionSchema = z.object({
 });
 
 export async function createSanction(input: z.infer<typeof createSanctionSchema>) {
-  const caller = await requireAdmin();
+  const caller = await requireModerator();
   const { userId, type, reason, notes, durationDays } = createSanctionSchema.parse(input);
 
   // Prevent sanctioning yourself
@@ -192,19 +213,83 @@ const changeUserRoleSchema = z.object({
   newRole: z.enum(["USER", "CUSTOMER", "MODERATOR", "ADMIN", "SUPER_ADMIN"]),
 });
 
-export async function changeUserRole(input: z.infer<typeof changeUserRoleSchema>) {
-  const caller = await requireSuperAdmin();
-  const { userId, newRole } = changeUserRoleSchema.parse(input);
+/**
+ * Change the role of a target user.
+ *
+ * Permission matrix (see `docs/spec-role-permissions.md` §3):
+ * - SUPER_ADMIN: can promote/demote any user to any role, except their own.
+ * - ADMIN: can only act on USER / CUSTOMER / MODERATOR targets, and may only
+ *   assign USER / CUSTOMER / MODERATOR. Cannot modify ADMIN/SUPER_ADMIN.
+ *   Cannot grant ADMIN/SUPER_ADMIN. Cannot modify own role.
+ * - MODERATOR, USER, CUSTOMER: forbidden.
+ *
+ * Returns the ActionResult shape used across moderation modules so the UI
+ * can branch on `success` without try/catch boilerplate.
+ */
+export async function changeUserRole(
+  input: z.infer<typeof changeUserRoleSchema>,
+): Promise<ActionResult<{ id: string; role: Role }>> {
+  try {
+    const caller = await requireAdmin();
+    const { userId, newRole } = changeUserRoleSchema.parse(input);
 
-  if (userId === caller.userId) throw new Error("Cannot change your own role");
+    // 1. Self-modification is forbidden for everyone, including SUPER_ADMIN.
+    if (userId === caller.userId) {
+      return { success: false, error: "Cannot change your own role" };
+    }
 
-  const updated = await prisma.user.update({
-    where: { id: userId },
-    data: { role: newRole },
-  });
+    const target = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true },
+    });
+    if (!target) return { success: false, error: "User not found" };
 
-  // Fire-and-forget: bot dispatch must never break the admin action.
-  await dispatchBotsOnRoleChanged(userId, newRole);
+    const targetRole = target.role as Role;
 
-  return updated;
+    // 2. No-op: silent success without DB write or bot dispatch.
+    if (newRole === targetRole) {
+      return { success: true, data: { id: target.id, role: targetRole } };
+    }
+
+    // 3. ADMIN-specific restrictions.
+    if (caller.role === "ADMIN") {
+      if (ADMIN_ROLES.includes(targetRole as (typeof ADMIN_ROLES)[number])) {
+        return {
+          success: false,
+          error: "Admins cannot modify other admins or super admins",
+        };
+      }
+      if (ADMIN_ROLES.includes(newRole as (typeof ADMIN_ROLES)[number])) {
+        return {
+          success: false,
+          error: "Admins cannot grant ADMIN or SUPER_ADMIN role",
+        };
+      }
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { role: newRole },
+      select: { id: true, role: true },
+    });
+
+    // Moderation log — no PII (no email, no name).
+    console.info(
+      "[admin] changeUserRole",
+      JSON.stringify({
+        callerId: caller.userId,
+        callerRole: caller.role,
+        targetUserId: target.id,
+        oldRole: targetRole,
+        newRole,
+      }),
+    );
+
+    // Fire-and-forget: bot dispatch must never break the admin action.
+    await dispatchBotsOnRoleChanged(userId, newRole);
+
+    return { success: true, data: { id: updated.id, role: updated.role as Role } };
+  } catch (err) {
+    return { success: false, error: errorMessage(err) };
+  }
 }

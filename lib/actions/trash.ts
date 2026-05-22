@@ -282,7 +282,7 @@ export async function hardDeletePost(
   input: z.infer<typeof idOnlyPostSchema>,
 ): Promise<ActionResult> {
   try {
-    const caller = await requireSuperAdminRole();
+    const caller = await requireAdminRole();
     const { postId } = idOnlyPostSchema.parse(input);
 
     const post = await prisma.post.findUnique({
@@ -313,7 +313,7 @@ export async function hardDeleteComment(
   input: z.infer<typeof idOnlyCommentSchema>,
 ): Promise<ActionResult> {
   try {
-    const caller = await requireSuperAdminRole();
+    const caller = await requireAdminRole();
     const { commentId } = idOnlyCommentSchema.parse(input);
 
     const comment = await prisma.comment.findUnique({

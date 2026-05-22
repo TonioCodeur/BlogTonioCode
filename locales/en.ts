@@ -276,6 +276,21 @@ export default {
   'admin.confirmDelete.confirm': 'Delete',
   'admin.confirmDelete.deleting': 'Deleting...',
   'admin.role.updated': 'Role updated successfully',
+  // Admin — role-change errors (spec §7)
+  'admin.role.errors.unauthorized': 'You must be signed in.',
+  'admin.role.errors.forbidden': 'You are not allowed to change roles.',
+  'admin.role.errors.selfChange': 'You cannot change your own role.',
+  'admin.role.errors.userNotFound': 'User not found.',
+  'admin.role.errors.targetIsAdmin': 'Admins cannot modify other admins or super admins.',
+  'admin.role.errors.cannotGrantAdmin': 'Admins cannot grant the ADMIN or SUPER_ADMIN role.',
+  'admin.role.errors.invalidInput': 'Invalid input.',
+  // Admin — sanction errors (spec §7)
+  'admin.sanction.errors.targetIsAdmin': 'You cannot sanction an admin.',
+  // Admin — trash gating errors (spec §7)
+  'admin.trash.hardDelete.forbidden': 'Only ADMIN or SUPER_ADMIN can hard-delete items.',
+  'admin.trash.empty.forbidden': 'Only SUPER_ADMIN can empty the trash.',
+  // Admin — access notice (spec §7)
+  'admin.access.moderatorView': 'Moderator view — limited actions available.',
   'admin.user.deleted': 'User deleted successfully',
   'admin.user.delete': 'Delete user',
   'admin.user.deleteTitle': 'Delete user?',

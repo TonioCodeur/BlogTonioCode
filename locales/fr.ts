@@ -276,6 +276,21 @@ export default {
   'admin.confirmDelete.confirm': 'Supprimer',
   'admin.confirmDelete.deleting': 'Suppression...',
   'admin.role.updated': 'Rôle mis à jour avec succès',
+  // Admin — erreurs changement de rôle (spec §7)
+  'admin.role.errors.unauthorized': 'Vous devez être connecté.',
+  'admin.role.errors.forbidden': 'Vous n\'êtes pas autorisé à modifier les rôles.',
+  'admin.role.errors.selfChange': 'Vous ne pouvez pas modifier votre propre rôle.',
+  'admin.role.errors.userNotFound': 'Utilisateur introuvable.',
+  'admin.role.errors.targetIsAdmin': 'Les administrateurs ne peuvent pas modifier d\'autres administrateurs ou super-administrateurs.',
+  'admin.role.errors.cannotGrantAdmin': 'Les administrateurs ne peuvent pas attribuer les rôles ADMIN ou SUPER_ADMIN.',
+  'admin.role.errors.invalidInput': 'Entrée invalide.',
+  // Admin — erreurs sanction (spec §7)
+  'admin.sanction.errors.targetIsAdmin': 'Vous ne pouvez pas sanctionner un administrateur.',
+  // Admin — restrictions corbeille (spec §7)
+  'admin.trash.hardDelete.forbidden': 'Seuls les ADMIN ou SUPER_ADMIN peuvent supprimer définitivement.',
+  'admin.trash.empty.forbidden': 'Seul un SUPER_ADMIN peut vider la corbeille.',
+  // Admin — accès (spec §7)
+  'admin.access.moderatorView': 'Vue modérateur — actions limitées.',
   'admin.user.deleted': 'Utilisateur supprimé avec succès',
   'admin.user.delete': "Supprimer l'utilisateur",
   'admin.user.deleteTitle': "Supprimer l'utilisateur ?",
